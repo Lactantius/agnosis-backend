@@ -38,4 +38,4 @@ RUN . /venv/bin/activate && pip install *.whl
 
 EXPOSE 5000
 
-ENTRYPOINT ["app/docker-entrypoint.sh"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
