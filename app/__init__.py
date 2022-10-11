@@ -8,17 +8,14 @@ from .routes.ideas import ideas
 from .db import init_driver
 
 
-# TODO Initialize DB
-
-
 def create_app():
     """Initialize the application"""
 
     app = Flask(__name__, instance_relative_config=False)
 
     app.config.from_mapping(
-        SECRET_KEY=os.getenv("FLASK_SECRET"),
-        JWT_SECRET_KEY=os.getenv("JWT_SECRET"),
+        SECRET_KEY=os.getenv("FLASK_SECRET", "secret"),
+        JWT_SECRET_KEY=os.getenv("JWT_SECRET", "secret"),
         JWT_AUTH_HEADER_PREFIX="Bearer",
         JWT_VERIFY_CLAIMS="signature",
         JWT_EXPIRATION_DELTA=timedelta(360),
@@ -46,8 +43,6 @@ def create_app():
             app.config.get("NEO4J_PASSWORD"),
         )
     # TODO db.create_all()
-
-    # with app.app_context():
 
     app.register_blueprint(ideas)
 
