@@ -21,11 +21,32 @@ def test_can_make_new_user(app):
                 driver, test_user["email"], test_user["password"], test_user["username"]
             )
 
+            assert user["userId"] is not None
             assert user["email"] == test_user["email"]
+            assert user["token"] is not None
 
             in_db = authenticate(driver, user["email"], test_user["password"])
 
             assert in_db["username"] == user["username"]
+
+
+def test_none_returned_if_username_or_password_not_unique(app):
+    """Should not be able to make a user with an old username or password"""
+    with app.app_context():
+        with get_driver() as driver:
+
+            user = register(
+                driver, test_user["email"], test_user["password"], test_user["username"]
+            )
+
+            # assert bad_username is None
+            with pytest.raises(Exception):
+                register(
+                    driver, "bob@bob.com", test_user["password"], test_user["username"]
+                )
+
+            with pytest.raises(Exception):
+                register(driver, test_user["email"], test_user["password"], "bob")
 
 
 def test_can_authenticate_user(app):
