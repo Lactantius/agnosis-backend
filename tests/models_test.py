@@ -2,7 +2,7 @@ import pytest
 
 from app.db import get_driver
 from app.models.user import register, authenticate
-from app.models.source import add_source, find_source
+from app.models.source import add_source, find_source, all_sources
 
 from .fixtures import app
 
@@ -67,6 +67,16 @@ def test_can_add_source(app):
             source = add_source(driver, "Test Source")
 
             assert source["name"] == "Test Source"
+
+
+def test_can_get_all_sources(app):
+    with app.app_context():
+        with get_driver() as driver:
+            sources = all_sources(driver)
+
+        assert len(sources) == 2
+        print(sources)
+        assert sources[0]["name"] == "Scott Alexander"
 
 
 def test_can_find_source(app):

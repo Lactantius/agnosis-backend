@@ -72,6 +72,28 @@ def add_source(driver, name):
     return source
 
 
+def all_sources(driver):
+    """Get all sources"""
+
+    def get_all(tx):
+        result = tx.run(
+            """
+            MATCH (s:Source)
+            RETURN s
+            """
+        )
+        return [record["s"] for record in result]
+
+    try:
+        with driver.session() as session:
+            sources = session.execute_read(get_all)
+
+    except:
+        raise Exception
+
+    return sources
+
+
 def find_source(driver, name):
     """Get a new source with its associated ideas"""
 
@@ -79,7 +101,7 @@ def find_source(driver, name):
         with driver.session() as session:
             source = session.execute_read(get_source, name)
 
-    except ConstraintError as err:
+    except:
         # raise ValidationException(err.message, {"email": err.message})
         raise Exception
 
