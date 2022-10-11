@@ -19,7 +19,7 @@ RUN pip install "poetry==$POETRY_VERSION"
 RUN python -m venv /venv
 
 COPY pyproject.toml poetry.lock ./
-RUN . /venv/bin/activate && poetry install --no-dev --no-root
+RUN . /venv/bin/activate && poetry install --only main --no-root
 #RUN poetry export -f requirements.txt | /venv/bin/pip install -r /dev/stdin
 
 COPY . .
@@ -37,6 +37,6 @@ COPY docker-entrypoint.sh wsgi.py gunicorn.config.py .env ./
 RUN . /venv/bin/activate && pip install *.whl
 RUN ["chmod", "+x", "./docker-entrypoint.sh"]
 
-EXPOSE 5001
+EXPOSE 5000
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

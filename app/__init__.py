@@ -15,9 +15,9 @@ def create_app():
     """Initialize the application"""
 
     app = Flask(__name__, instance_relative_config=False)
-    app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET")
 
     app.config.from_mapping(
+        SECRET_KEY=os.getenv("FLASK_SECRET"),
         JWT_SECRET_KEY=os.getenv("JWT_SECRET"),
         JWT_AUTH_HEADER_PREFIX="Bearer",
         JWT_VERIFY_CLAIMS="signature",
