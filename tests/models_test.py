@@ -3,6 +3,7 @@ import pytest
 from app.db import get_driver
 from app.models.user import register, authenticate, find_user
 from app.models.source import add_source, find_source, all_sources
+from app.models.idea import add_idea
 
 from .fixtures import app
 
@@ -10,6 +11,13 @@ test_user = {
     "email": "test@test.com",
     "password": "test_password",
     "username": "test_user",
+}
+
+test_idea = {
+    "source": "Scott Alexander",
+    "user": "user1",
+    "url": "https://astralcodexten.substack.com/p/a-columbian-exchange",
+    "description": "A fictional dialogue about the legitimacy of holidays",
 }
 
 
@@ -84,7 +92,6 @@ def test_can_get_all_sources(app):
             sources = all_sources(driver)
 
         assert len(sources) == 2
-        print(sources)
         assert sources[0]["name"] == "Scott Alexander"
 
 
@@ -96,8 +103,18 @@ def test_can_find_source(app):
         assert source["name"] == "Ross Douthat"
 
 
-# def test_can_add_idea(app):
-#     with app.app_context():
-#         with get_driver() as driver:
-#             source_id = find_source(driver, "Ross Douthat")["sourceId"]
-#             user_id =
+def test_can_add_idea(app):
+    with app.app_context():
+        with get_driver() as driver:
+            source_id = find_source(driver, "Scott Alexander")["sourceId"]
+            user_id = find_user(driver, "user1@user1.com")["userId"]
+            idea = add_idea(
+                driver,
+                test_idea["url"],
+                user_id,
+                source_id,
+                test_idea["description"],
+                2,
+            )
+
+        assert idea["description"] == test_idea["description"]
