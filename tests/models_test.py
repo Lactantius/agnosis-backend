@@ -12,7 +12,8 @@ test_user = {
 }
 
 
-def test_make_new_user(app):
+def test_can_make_new_user(app):
+    """Make a new user and checks that it was added to the db"""
     with app.app_context():
         with get_driver() as driver:
 
@@ -22,11 +23,16 @@ def test_make_new_user(app):
 
             assert user["email"] == test_user["email"]
 
+            in_db = authenticate(driver, user["email"], test_user["password"])
 
-def test_get_user(app):
+            assert in_db["username"] == user["username"]
+
+
+def test_can_authenticate_user(app):
+    """Checks if user1 can be authenticated"""
     with app.app_context():
         with get_driver() as driver:
 
-            user = authenticate(driver, test_user["email"], test_user["password"])
+            user = authenticate(driver, "user1@user1.com", "password1")
 
-            assert user["email"] == test_user["email"]
+            assert user["username"] == "user1"

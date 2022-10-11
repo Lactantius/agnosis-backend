@@ -5,7 +5,8 @@ from flask import Flask
 from datetime import timedelta
 
 from .routes.ideas import ideas
-from .db import init_driver
+from .db import init_driver, get_driver
+from .seed import reset_db, set_constraints
 
 
 def create_app():
@@ -31,18 +32,21 @@ def create_app():
         )
     else:
         app.config.from_mapping(
+            FLASK_DEBUG=True,
             NEO4J_URI="neo4j://localhost:7687",
             NEO4J_USERNAME="neo4j",
             NEO4J_PASSWORD="test",
         ),
 
     with app.app_context():
-        init_driver(
+        driver = init_driver(
             app.config.get("NEO4J_URI"),
             app.config.get("NEO4J_USERNAME"),
             app.config.get("NEO4J_PASSWORD"),
         )
-    # TODO db.create_all()
+        set_constraints(driver)
+        if app.config.get("FLASK_DEBUG"):
+            reset_db(driver)
 
     app.register_blueprint(ideas)
 
