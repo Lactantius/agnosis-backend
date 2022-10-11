@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/bin/bash
 # Adapted from https://stackoverflow.com/a/57886655/6632828
 set -e
 
@@ -10,4 +10,7 @@ set -e
 #     sleep 1
 # done
 
+set -a
+source .env
+export FLASK_DEBUG=false
 exec gunicorn -c gunicorn.config.py wsgi:app

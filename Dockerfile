@@ -1,5 +1,5 @@
 # Adapted from https://stackoverflow.com/a/57886655/6632828
-FROM python:3.10-alpine as base
+FROM python:3.10-slim as base
 
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
@@ -14,7 +14,7 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_NO_CACHE_DIR=1 \
     POETRY_VERSION=1.2.0
 
-RUN apk add --no-cache gcc musl-dev
+#RUN apk add --no-cache gcc musl-dev
 RUN pip install "poetry==$POETRY_VERSION"
 RUN python -m venv /venv
 
@@ -32,10 +32,11 @@ FROM base as final
 # RUN apk add --no-cache ?
 COPY --from=builder /venv /venv
 COPY --from=builder /app/dist .
-COPY docker-entrypoint.sh wsgi.py ./
+COPY docker-entrypoint.sh wsgi.py gunicorn.config.py .env ./
 
 RUN . /venv/bin/activate && pip install *.whl
+RUN ["chmod", "+x", "./docker-entrypoint.sh"]
 
-EXPOSE 5000
+EXPOSE 5001
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
