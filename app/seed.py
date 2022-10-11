@@ -1,4 +1,5 @@
 from .models.user import register
+from .models.source import add_source
 
 
 def clear_db(tx):
@@ -26,6 +27,8 @@ def seed_db(driver):
     """Set initial values for db"""
     user1 = register(driver, "user1@user1.com", "password1", "user1")
     user2 = register(driver, "user2@user2.com", "password2", "user2")
+    source1 = add_source(driver, "Scott Alexander")
+    source2 = add_source(driver, "Ross Douthat")
 
 
 def reset_db(driver):

@@ -2,7 +2,7 @@ import pytest
 
 from app.db import get_driver
 from app.models.user import register, authenticate
-from app.models.source import add_source
+from app.models.source import add_source, find_source
 
 from .fixtures import app
 
@@ -13,7 +13,7 @@ test_user = {
 }
 
 
-def test_can_make_new_user(app):
+def test_can_add_user(app):
     """Make a new user and checks that it was added to the db"""
     with app.app_context():
         with get_driver() as driver:
@@ -67,3 +67,11 @@ def test_can_add_source(app):
             source = add_source(driver, "Test Source")
 
             assert source["name"] == "Test Source"
+
+
+def test_can_find_source(app):
+    with app.app_context():
+        with get_driver() as driver:
+            source = find_source(driver, "Ross Douthat")
+
+        assert source["name"] == "Ross Douthat"

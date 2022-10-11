@@ -27,20 +27,30 @@ def create_source(tx, name):
     )
 
 
-def get_source(tx, source_id):
-    """Transaction function for getting a source from the database"""
-    source = tx.run(
-        """
-        MATCH (s:Source {sourceId: $source_id})
+def get_source(tx, name):
+    """Transaction function for getting a source and its ideas from the database"""
+    # source = tx.run(
+    #     """
+    #     MATCH (s:Source {name: $name})-[a:AUTHORED]->(i:Idea)
+    #     RETURN s, i {
+    #         .*
+    #     } AS idea
+    #     """,
+    #     name=name,
+    # ).values("s", "idea")
+    source = (
+        tx.run(
+            """
+        MATCH (s:Source {name: $name})
         RETURN s
         """,
-        source_id=source_id,
-    ).single()
+            name=name,
+        )
+        .single()
+        .get("s")
+    )
 
-    if source is None:
-        return None
-
-    return source.get("s")
+    return source
 
 
 ##############################################################################
@@ -54,6 +64,20 @@ def add_source(driver, name):
     try:
         with driver.session() as session:
             source = session.execute_write(create_source, name)
+
+    except ConstraintError as err:
+        # raise ValidationException(err.message, {"email": err.message})
+        raise Exception
+
+    return source
+
+
+def find_source(driver, name):
+    """Get a new source with its associated ideas"""
+
+    try:
+        with driver.session() as session:
+            source = session.execute_read(get_source, name)
 
     except ConstraintError as err:
         # raise ValidationException(err.message, {"email": err.message})
