@@ -110,6 +110,11 @@ def authenticate(driver, email, plain_password):
     return payload
 
 
+def find_user(driver, email):
+    with driver.session() as session:
+        return session.execute_read(get_user, email)
+
+
 ##############################################################################
 # Helper functions
 #

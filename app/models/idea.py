@@ -1,8 +1,6 @@
 """Idea model"""
 
 from datetime import datetime
-import jwt
-import bcrypt
 from flask import current_app
 from neo4j.exceptions import ConstraintError
 

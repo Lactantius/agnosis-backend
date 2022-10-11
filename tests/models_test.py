@@ -1,7 +1,7 @@
 import pytest
 
 from app.db import get_driver
-from app.models.user import register, authenticate
+from app.models.user import register, authenticate, find_user
 from app.models.source import add_source, find_source, all_sources
 
 from .fixtures import app
@@ -60,6 +60,15 @@ def test_can_authenticate_user(app):
             assert user["username"] == "user1"
 
 
+def test_can_get_user_info(app):
+    """Can user1 info be gathered"""
+    with app.app_context():
+        with get_driver() as driver:
+
+            user = find_user(driver, "user1@user1.com")
+            assert user["username"] == "user1"
+
+
 def test_can_add_source(app):
     with app.app_context():
         with get_driver() as driver:
@@ -85,3 +94,10 @@ def test_can_find_source(app):
             source = find_source(driver, "Ross Douthat")
 
         assert source["name"] == "Ross Douthat"
+
+
+# def test_can_add_idea(app):
+#     with app.app_context():
+#         with get_driver() as driver:
+#             source_id = find_source(driver, "Ross Douthat")["sourceId"]
+#             user_id =
