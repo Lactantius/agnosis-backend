@@ -3,6 +3,7 @@
 import os
 from flask import Flask
 from datetime import timedelta
+from flask_jwt_extended import JWTManager
 
 from .routes.ideas import ideas
 from .routes.users import users
@@ -49,6 +50,8 @@ def create_app():
         set_constraints(driver)
         if app.config.get("FLASK_DEBUG"):
             reset_db(driver)
+
+    jwt = JWTManager(app)
 
     app.register_blueprint(ideas)
     app.register_blueprint(users)

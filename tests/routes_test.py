@@ -14,7 +14,7 @@ def client(app) -> FlaskClient:
 
 
 ##############################################################################
-# Ideas
+# Auth
 #
 
 
@@ -94,6 +94,29 @@ def test_cannot_login_with_invalid_credentials(client: FlaskClient) -> None:
         )
         assert bad_email.status_code == 401
         assert bad_email.json["error"] == "Invalid username or password"
+
+
+##############################################################################
+# User Info
+#
+
+
+def test_can_view_user_info(client: FlaskClient) -> None:
+    with client:
+        user = client.post(
+            "/api/users/login",
+            json={
+                "email": "user1@user1.com",
+                "password": "password1",
+            },
+        ).json
+        user_id = user["user"]["sub"]
+        token = user["user"]["token"]
+        headers = {"Authorization": f"Bearer {token}"}
+        res = client.get(f"/api/users/{user_id}", headers=headers)
+
+        assert res.status_code == 200
+        assert res.json["user"]["username"] == "user1"
 
 
 ##############################################################################

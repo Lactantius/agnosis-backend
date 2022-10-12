@@ -36,7 +36,9 @@ def get_user(tx, email):
     user = tx.run(
         """
         MATCH (u:User {email: $email})
-        RETURN u
+        RETURN u {
+            .*
+        }
         """,
         email=email,
     ).single()
@@ -110,7 +112,7 @@ def authenticate(driver, email, plain_password):
     return payload
 
 
-def find_user(driver, email):
+def find_user(driver, email: str):
     with driver.session() as session:
         return session.execute_read(get_user, email)
 
