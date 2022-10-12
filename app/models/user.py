@@ -6,6 +6,7 @@ import bcrypt
 from flask import current_app
 from neo4j.exceptions import ConstraintError
 
+from app.exceptions.validation_exception import ValidationException
 
 ##############################################################################
 # Transaction functions
@@ -63,8 +64,7 @@ def register(driver, email, plain_password, username):
             result = session.execute_write(create_user, email, encrypted, username)
 
     except ConstraintError as err:
-        # raise ValidationException(err.message, {"email": err.message})
-        raise Exception
+        raise ValidationException(err.message, {"email": err.message})
 
     user = result["u"]
 

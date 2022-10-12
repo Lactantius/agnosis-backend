@@ -18,6 +18,54 @@ def client(app) -> FlaskClient:
 #
 
 
+def test_can_signup(client: FlaskClient):
+    """Can one sign up for a new account?"""
+
+    with client:
+        res = client.post(
+            "/api/auth/signup",
+            json={
+                "email": "apitest@apitest.com",
+                "password": "apitest1",
+                "username": "apitest1",
+            },
+        )
+        assert res.status_code == 201
+        assert res.json["user"]["email"] == "apitest@apitest.com"
+
+
+def test_error_message_if_username_or_email_not_unique(client: FlaskClient):
+    """Will correct error message show?"""
+
+    with client:
+        bad_username = client.post(
+            "/api/auth/signup",
+            json={
+                "email": "apitest@apitest.com",
+                "password": "apitest1",
+                "username": "user1",
+            },
+        )
+        assert bad_username.status_code == 401
+        assert "already exists" in bad_username.json["error"]
+
+        bad_email = client.post(
+            "/api/auth/signup",
+            json={
+                "email": "user1@user1.com",
+                "password": "apitest1",
+                "username": "apitest1",
+            },
+        )
+        assert bad_email.status_code == 401
+        assert "already exists" in bad_email.json["error"]
+
+
+##############################################################################
+# Ideas
+#
+
+
 def test_get_random_idea(client):
     """Can one get a random idea?"""
 
