@@ -81,6 +81,23 @@ def add_idea(
         )["idea"]
 
 
+def random_idea(driver, user_id):
+    with driver.session() as session:
+        return session.execute_read(
+            lambda tx: tx.run(
+                """
+                MATCH (i:Idea)
+                RETURN i {
+                    .*,
+                    createdAt: toString(i.createdAt)
+                }
+                ORDER BY rand()
+                LIMIT 1
+                """
+            ).single()
+        )["i"]
+
+
 ##############################################################################
 # Helper functions
 #
