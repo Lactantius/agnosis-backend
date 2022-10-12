@@ -1,5 +1,6 @@
 from .models.user import register
 from .models.source import add_source
+from .models.idea import add_idea
 
 
 def clear_db(tx):
@@ -29,6 +30,22 @@ def seed_db(driver):
     user2 = register(driver, "user2@user2.com", "password2", "user2")
     source1 = add_source(driver, "Scott Alexander")
     source2 = add_source(driver, "Ross Douthat")
+    idea1 = add_idea(
+        driver,
+        "https://slatestarcodex.com/2014/04/22/right-is-the-new-left/",
+        user1["userId"],
+        source1["sourceId"],
+        "A theory of social change using cellular automata",
+        1,
+    )
+    idea2 = add_idea(
+        driver,
+        "https://www.nytimes.com/2020/02/07/opinion/sunday/western-society-decadence.html",
+        user2["userId"],
+        source2["sourceId"],
+        "Western society is more decadent than you think",
+        -2,
+    )
 
 
 def reset_db(driver):
