@@ -10,30 +10,30 @@ auth = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 @auth.post("/signup")
 def signup():
-    form_data = request.get_json()
+    data = request.get_json()
 
-    email = form_data["email"]
-    password = form_data["password"]
-    username = form_data["username"]
+    email = data["email"]
+    password = data["password"]
+    username = data["username"]
 
     try:
         user = register(current_app.driver, email, password, username)
     except ValidationException as err:
-        return (jsonify(error=err.message), 401)
+        return (jsonify(error=err.message), 409)
 
     return (jsonify(user=user), 201)
 
 
 @auth.post("/login")
 def login():
-    form_data = request.get_json()
+    data = request.get_json()
 
-    email = form_data["email"]
-    password = form_data["password"]
+    email = data["email"]
+    password = data["password"]
 
     user = authenticate(current_app.driver, email, password)
 
     if user is False:
-        return "Unauthorized", 401
+        return (jsonify(error="Invalid username or password"), 401)
 
-    return jsonify(user)
+    return (jsonify(user=user), 200)
