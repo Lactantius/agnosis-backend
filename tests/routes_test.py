@@ -102,6 +102,7 @@ def test_cannot_login_with_invalid_credentials(client: FlaskClient) -> None:
 
 
 def test_can_view_user_info(client: FlaskClient) -> None:
+    """Can a user view user details?"""
     with client:
         user = client.post(
             "/api/users/login",
@@ -117,6 +118,42 @@ def test_can_view_user_info(client: FlaskClient) -> None:
 
         assert res.status_code == 200
         assert res.json["user"]["username"] == "user1"
+        assert res.json["user"].get("password", None) is None
+
+
+def test_cannot_view_user_info_without_proper_token(client: FlaskClient) -> None:
+    """Can only the user view user details?"""
+
+    with client:
+        user1 = client.post(
+            "/api/users/login",
+            json={
+                "email": "user1@user1.com",
+                "password": "password1",
+            },
+        ).json
+        user1_id = user1["user"]["sub"]
+
+        no_token = client.get(f"/api/users/{user1_id}")
+
+        assert no_token.status_code == 401
+        assert no_token.json["msg"] == "Missing Authorization Header"
+
+        user2 = client.post(
+            "/api/users/login",
+            json={
+                "email": "user2@user2.com",
+                "password": "password2",
+            },
+        ).json
+
+        user2_id = user2["user"]["sub"]
+        token = user2["user"]["token"]
+        headers = {"Authorization": f"Bearer {token}"}
+        res = client.get(f"/api/users/{user1_id}", headers=headers)
+
+        assert res.status_code == 403
+        assert res.json["error"] == "You are not authorized to view this resource"
 
 
 ##############################################################################

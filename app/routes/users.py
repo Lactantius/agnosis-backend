@@ -56,8 +56,6 @@ def get_user(user_id):
 
     claims = get_jwt()
     current_user = claims.get("userId", None)
-    if current_user is None:
-        return (jsonify(error="You must be logged in to view this resource"), 401)
     if current_user != user_id:
         return (jsonify(error="You are not authorized to view this resource"), 403)
 
