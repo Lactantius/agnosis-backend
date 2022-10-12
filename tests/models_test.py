@@ -3,7 +3,7 @@ import pytest
 from app.db import get_driver
 from app.models.user import register, authenticate, find_user
 from app.models.source import add_source, find_source, all_sources
-from app.models.idea import add_idea
+from app.models.idea import add_idea, search_ideas
 
 from .fixtures import app
 
@@ -118,3 +118,17 @@ def test_can_add_idea(app):
             )
 
         assert idea["description"] == test_idea["description"]
+
+
+def test_can_search_ideas_by_description(app):
+    with app.app_context():
+        with get_driver() as driver:
+            ideas = search_ideas(driver, "cellular")
+
+        assert "automata" in ideas[0][2]
+
+
+def test_can_like_idea(app):
+    with app.app_context():
+        with get_driver() as driver:
+            user_id = find_user(driver, "user1@user1.com")["userId"]

@@ -40,7 +40,7 @@ def create_idea(
         MATCH (u:User {userId: $user_id})
         MATCH (s:Source {sourceId: $source_id})
         MERGE (u)-[l:LIKES {agreement: $agreement}]->(i:Idea {url: $url, description: $description})<-[f:AUTHORED]-(s)
-        ON CREATE SET i.createdAt = datetime()
+        ON CREATE SET i.createdAt = datetime(), i.ideaId = randomUuid()
         RETURN i {
             .*
         } AS idea
@@ -96,6 +96,23 @@ def random_idea(driver, user_id):
                 """
             ).single()
         )["i"]
+
+
+def search_ideas(driver, search_str: str):
+    """Search an idea by url and description"""
+
+    def search(tx, search_str: str):
+        result = tx.run(
+            """
+            CALL db.index.fulltext.queryNodes("urlsAndDescriptions", $search_str) YIELD node, score
+            RETURN node.ideaId AS id, node.url AS url, node.description AS description, score
+            """,
+            search_str=search_str,
+        ).values("id", "url", "description")
+        return [record for record in result]
+
+    with driver.session() as session:
+        return session.execute_read(search, search_str)
 
 
 ##############################################################################

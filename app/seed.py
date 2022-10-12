@@ -8,7 +8,7 @@ def clear_db(tx):
     tx.run("MATCH (n) DETACH DELETE n")
 
 
-def set_constraints(driver):
+def set_db_properties(driver):
     def constraints(tx):
         tx.run(
             "CREATE CONSTRAINT unique_email IF NOT EXISTS FOR (user:User) REQUIRE user.email IS UNIQUE"
@@ -20,8 +20,14 @@ def set_constraints(driver):
             "CREATE CONSTRAINT unique_source_name IF NOT EXISTS FOR (source:Source) REQUIRE source.name IS UNIQUE"
         )
 
+    def indices(tx):
+        tx.run(
+            "CREATE FULLTEXT INDEX urlsAndDescriptions IF NOT EXISTS FOR (i:Idea) ON EACH [i.url, i.description]"
+        )
+
     with driver.session() as session:
         session.execute_write(constraints)
+        session.execute_write(indices)
 
 
 def seed_db(driver):

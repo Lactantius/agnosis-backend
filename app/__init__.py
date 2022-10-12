@@ -9,7 +9,7 @@ from .routes.ideas import ideas
 from .routes.users import users
 
 from .db import init_driver, get_driver
-from .seed import reset_db, set_constraints
+from .seed import reset_db, set_db_properties
 
 
 def create_app():
@@ -47,7 +47,7 @@ def create_app():
             app.config.get("NEO4J_USERNAME"),
             app.config.get("NEO4J_PASSWORD"),
         )
-        set_constraints(driver)
+        set_db_properties(driver)
         if app.config.get("FLASK_DEBUG"):
             reset_db(driver)
 
