@@ -115,6 +115,26 @@ def search_ideas(driver, search_str: str):
         return session.execute_read(search, search_str)
 
 
+def like_idea(driver, user_id: str, idea_id: str, agreement: int) -> int:
+    """Add a like relationship to an idea. If idea already liked, edits agreement level."""
+
+    def like(tx, user_id: str, idea_id: str, agreement: int) -> int:
+        result = tx.run(
+            """
+            MERGE (u:User {userId: $user_id})-[l:LIKES]->(i:Idea {ideaId: $idea_id})
+            SET l.agreement=$agreement
+            RETURN l.agreement as agreement
+            """,
+            user_id=user_id,
+            idea_id=idea_id,
+            agreement=agreement,
+        ).single()
+        return result["agreement"]
+
+    with driver.session() as session:
+        return session.execute_write(like, user_id, idea_id, agreement)
+
+
 ##############################################################################
 # Helper functions
 #
