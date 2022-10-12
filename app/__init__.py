@@ -5,7 +5,7 @@ from flask import Flask
 from datetime import timedelta
 
 from .routes.ideas import ideas
-from .routes.auth import auth
+from .routes.users import users
 
 from .db import init_driver, get_driver
 from .seed import reset_db, set_constraints
@@ -51,6 +51,6 @@ def create_app():
             reset_db(driver)
 
     app.register_blueprint(ideas)
-    app.register_blueprint(auth)
+    app.register_blueprint(users)
 
     return app

@@ -5,10 +5,10 @@ from flask import Blueprint, jsonify, request, current_app
 from app.models.user import register, authenticate
 from app.exceptions.validation_exception import ValidationException
 
-auth = Blueprint("auth", __name__, url_prefix="/api/auth")
+users = Blueprint("users", __name__, url_prefix="/api/users")
 
 
-@auth.post("/signup")
+@users.post("/signup")
 def signup():
     data = request.get_json()
 
@@ -24,7 +24,7 @@ def signup():
     return (jsonify(user=user), 201)
 
 
-@auth.post("/login")
+@users.post("/login")
 def login():
     data = request.get_json()
 

@@ -23,7 +23,7 @@ def test_can_signup(client: FlaskClient) -> None:
 
     with client:
         res = client.post(
-            "/api/auth/signup",
+            "/api/users/signup",
             json={
                 "email": "apitest@apitest.com",
                 "password": "apitest1",
@@ -39,7 +39,7 @@ def test_error_message_if_username_or_email_not_unique(client: FlaskClient) -> N
 
     with client:
         bad_username = client.post(
-            "/api/auth/signup",
+            "/api/users/signup",
             json={
                 "email": "apitest@apitest.com",
                 "password": "apitest1",
@@ -50,7 +50,7 @@ def test_error_message_if_username_or_email_not_unique(client: FlaskClient) -> N
         assert "already exists" in bad_username.json["error"]
 
         bad_email = client.post(
-            "/api/auth/signup",
+            "/api/users/signup",
             json={
                 "email": "user1@user1.com",
                 "password": "apitest1",
@@ -66,7 +66,7 @@ def test_can_login(client: FlaskClient) -> None:
 
     with client:
         res = client.post(
-            "/api/auth/login",
+            "/api/users/login",
             json={
                 "email": "user1@user1.com",
                 "password": "password1",
@@ -81,7 +81,7 @@ def test_cannot_login_with_invalid_credentials(client: FlaskClient) -> None:
 
     with client:
         bad_password = client.post(
-            "/api/auth/login",
+            "/api/users/login",
             json={"email": "user1@user1.com", "password": "bad_password"},
         )
         assert bad_password.status_code == 401
@@ -89,7 +89,7 @@ def test_cannot_login_with_invalid_credentials(client: FlaskClient) -> None:
 
     with client:
         bad_email = client.post(
-            "/api/auth/login",
+            "/api/users/login",
             json={"email": "invalid@invalid.com", "password": "password1"},
         )
         assert bad_email.status_code == 401
