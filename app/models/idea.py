@@ -116,12 +116,19 @@ def search_ideas(driver, search_str: str):
 
 
 def like_idea(driver, user_id: str, idea_id: str, agreement: int) -> int:
-    """Add a like relationship to an idea. If idea already liked, edits agreement level."""
+    """
+    Add a like relationship to an idea. If idea already liked, edits agreement level.
+    If idea is disliked, deleted dislike relationship
+    """
 
     def like(tx, user_id: str, idea_id: str, agreement: int) -> int:
         result = tx.run(
             """
-            MERGE (u:User {userId: $user_id})-[l:LIKES]->(i:Idea {ideaId: $idea_id})
+            MATCH (u:User {userId: $user_id})
+            MATCH (i:Idea {ideaId: $idea_id})
+            OPTIONAL MATCH (u)-[d:DISLIKES]->(i)
+            DELETE d
+            MERGE (u)-[l:LIKES]->(i)
             SET l.agreement=$agreement
             RETURN l.agreement as agreement
             """,
@@ -133,6 +140,28 @@ def like_idea(driver, user_id: str, idea_id: str, agreement: int) -> int:
 
     with driver.session() as session:
         return session.execute_write(like, user_id, idea_id, agreement)
+
+
+def dislike_idea(driver, user_id: str, idea_id: str):
+    """Add a like relationship to an idea. If idea already liked, deletes like relationship"""
+
+    def dislike(tx, user_id: str, idea_id: str):
+        result = tx.run(
+            """
+            MATCH (u:User {userId: $user_id})
+            MATCH (i:Idea {ideaId: $idea_id})
+            OPTIONAL MATCH (u)-[l:LIKES]->(i)
+            DELETE l
+            MERGE (u)-[d:DISLIKES]->(i)
+            RETURN d
+            """,
+            user_id=user_id,
+            idea_id=idea_id,
+        ).single()
+        return result["d"].type
+
+    with driver.session() as session:
+        return session.execute_write(dislike, user_id, idea_id)
 
 
 ##############################################################################

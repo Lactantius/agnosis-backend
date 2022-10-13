@@ -1,9 +1,11 @@
 import pytest
+from flask import Flask
 
 from app.db import get_driver
 from app.models.user import register, authenticate, find_user
 from app.models.source import add_source, find_source, all_sources
-from app.models.idea import add_idea, search_ideas, like_idea
+from app.models.idea import add_idea, search_ideas, like_idea, dislike_idea
+
 
 from .fixtures import app
 
@@ -135,5 +137,14 @@ def test_can_like_idea(app):
             idea_id = search_ideas(driver, "cellular")[0][0]
             liked = like_idea(driver, user_id, idea_id, 2)
 
-        print(liked)
         assert liked == 2
+
+
+def test_can_dislike_idea(app: Flask):
+    with app.app_context():
+        with get_driver() as driver:
+            user_id = find_user(driver, "user1@user1.com")["userId"]
+            idea_id = search_ideas(driver, "cellular")[0][0]
+            disliked = dislike_idea(driver, user_id, idea_id)
+
+        assert disliked == "DISLIKES"
