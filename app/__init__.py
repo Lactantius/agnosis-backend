@@ -9,7 +9,7 @@ from .routes.ideas import ideas
 from .routes.users import users
 
 from .db import init_driver, get_driver
-from .seed import reset_db, set_db_properties
+from .seed import reset_db, set_db_properties, dump_db, import_dev_data
 
 
 def create_app():
@@ -50,6 +50,8 @@ def create_app():
         set_db_properties(driver)
         if app.config.get("FLASK_DEBUG"):
             reset_db(driver)
+            # dump_db(driver)
+            # import_dev_data(driver)
 
     jwt = JWTManager(app)
 

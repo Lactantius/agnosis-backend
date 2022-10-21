@@ -3,13 +3,15 @@
 from flask import current_app
 from neo4j.exceptions import ConstraintError
 
+from app.types import SourceData
+
 
 ##############################################################################
 # Transaction functions
 #
 
 
-def create_source(tx, name):
+def create_source(tx, data: SourceData):
     """Transaction function for adding a new source to the database"""
     return (
         tx.run(
@@ -20,7 +22,7 @@ def create_source(tx, name):
         })
         RETURN s
         """,
-            name=name,
+            name=data["name"],
         )
         .single()
         .get("s")
@@ -58,12 +60,12 @@ def get_source(tx, name):
 #
 
 
-def add_source(driver, name):
+def add_source(driver, data: SourceData):
     """Register a new source"""
 
     try:
         with driver.session() as session:
-            source = session.execute_write(create_source, name)
+            source = session.execute_write(create_source, data)
 
     except ConstraintError as err:
         # raise ValidationException(err.message, {"email": err.message})

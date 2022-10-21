@@ -1,5 +1,6 @@
 """User model"""
 
+from typing import TypedDict
 from datetime import datetime
 import jwt
 import bcrypt
@@ -7,6 +8,7 @@ from flask import current_app
 from neo4j.exceptions import ConstraintError
 
 from app.exceptions.validation_exception import ValidationException
+from app.types import RegistrationData
 
 ##############################################################################
 # Transaction functions
@@ -54,16 +56,18 @@ def get_user(tx, email):
 #
 
 
-def register(driver, email, plain_password, username):
+def register(driver, data: RegistrationData) -> dict:
     """Register a new user"""
 
-    encrypted = bcrypt.hashpw(plain_password.encode("utf8"), bcrypt.gensalt()).decode(
+    encrypted = bcrypt.hashpw(data["password"].encode("utf8"), bcrypt.gensalt()).decode(
         "utf8"
     )
 
     try:
         with driver.session() as session:
-            result = session.execute_write(create_user, email, encrypted, username)
+            result = session.execute_write(
+                create_user, data["email"], encrypted, data["username"]
+            )
 
     except ConstraintError as err:
         raise ValidationException(err.message, {"email": err.message})
@@ -82,7 +86,7 @@ def register(driver, email, plain_password, username):
     return payload
 
 
-def authenticate(driver, email, plain_password):
+def authenticate(driver, email, password):
     """
     Find user by email address, hash password, and check against stored hash.
     If sucessful, return a dictionary containing the keys userId, email, username, and token.
@@ -96,7 +100,7 @@ def authenticate(driver, email, plain_password):
         return False
 
     if (
-        bcrypt.checkpw(plain_password.encode("utf-8"), user["password"].encode("utf-8"))
+        bcrypt.checkpw(password.encode("utf-8"), user["password"].encode("utf-8"))
         is False
     ):
         return False

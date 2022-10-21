@@ -28,9 +28,7 @@ def test_can_add_user(app):
     with app.app_context():
         with get_driver() as driver:
 
-            user = register(
-                driver, test_user["email"], test_user["password"], test_user["username"]
-            )
+            user = register(driver, test_user)
 
             assert user["userId"] is not None
             assert user["email"] == test_user["email"]
@@ -46,18 +44,28 @@ def test_none_returned_if_username_or_password_not_unique(app):
     with app.app_context():
         with get_driver() as driver:
 
-            user = register(
-                driver, test_user["email"], test_user["password"], test_user["username"]
-            )
+            user = register(driver, test_user)
 
             # assert bad_username is None
             with pytest.raises(Exception):
                 register(
-                    driver, "bob@bob.com", test_user["password"], test_user["username"]
+                    driver,
+                    {
+                        "username": test_user["username"],
+                        "email": "bob@bob.com",
+                        "password": "password",
+                    },
                 )
 
             with pytest.raises(Exception):
-                register(driver, test_user["email"], test_user["password"], "bob")
+                register(
+                    driver,
+                    {
+                        "username": "bob",
+                        "email": test_user["email"],
+                        "password": "password",
+                    },
+                )
 
 
 def test_can_authenticate_user(app):
@@ -83,7 +91,7 @@ def test_can_add_source(app):
     with app.app_context():
         with get_driver() as driver:
 
-            source = add_source(driver, "Test Source")
+            source = add_source(driver, {"name": "Test Source"})
 
             assert source["name"] == "Test Source"
 
@@ -93,8 +101,7 @@ def test_can_get_all_sources(app):
         with get_driver() as driver:
             sources = all_sources(driver)
 
-        assert len(sources) == 2
-        assert sources[0]["name"] == "Scott Alexander"
+        assert len(sources) == 12
 
 
 def test_can_find_source(app):
@@ -112,11 +119,12 @@ def test_can_add_idea(app):
             user_id = find_user(driver, "user1@user1.com")["userId"]
             idea = add_idea(
                 driver,
-                test_idea["url"],
-                user_id,
-                source_id,
-                test_idea["description"],
-                2,
+                {
+                    "url": test_idea["url"],
+                    "user_id": user_id,
+                    "source_id": source_id,
+                    "description": test_idea["description"],
+                },
             )
 
         assert idea["description"] == test_idea["description"]

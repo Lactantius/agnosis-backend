@@ -4,6 +4,8 @@ from datetime import datetime
 from flask import current_app
 from neo4j.exceptions import ConstraintError
 
+from app.types import IdeaData
+
 
 ##############################################################################
 # Transaction functions
@@ -31,25 +33,22 @@ def get_ideas(tx, sort, order, limit, skip):
     return [row.value("idea") for row in result]
 
 
-def create_idea(
-    tx, url: str, user_id: str, source_id: str, description: str, user_agreement: int
-):
+def create_idea(tx, data: IdeaData):
     """Transaction function for adding a new idea to the db"""
     return tx.run(
         """
         MATCH (u:User {userId: $user_id})
         MATCH (s:Source {sourceId: $source_id})
-        MERGE (u)-[l:LIKES {agreement: $agreement}]->(i:Idea {url: $url, description: $description})<-[f:AUTHORED]-(s)
+        MERGE (i:Idea {url: $url, description: $description})<-[f:AUTHORED]-(s)
         ON CREATE SET i.createdAt = datetime(), i.ideaId = randomUuid()
         RETURN i {
             .*
         } AS idea
         """,
-        url=url,
-        user_id=user_id,
-        source_id=source_id,
-        description=description,
-        agreement=user_agreement,
+        url=data["url"],
+        user_id=data["user_id"],
+        source_id=data["source_id"],
+        description=data["description"],
     ).single()
 
 
@@ -65,20 +64,11 @@ def all_ideas(driver, sort, order, limit=6, skip=0):
         return session.execute_read(get_ideas, sort, order, limit, skip)
 
 
-def add_idea(
-    driver,
-    url: str,
-    user_id: str,
-    source_id: str,
-    description: str,
-    user_agreement: int,
-):
+def add_idea(driver, data: IdeaData):
     """Add a new idea to the database"""
 
     with driver.session() as session:
-        return session.execute_write(
-            create_idea, url, user_id, source_id, description, user_agreement
-        )["idea"]
+        return session.execute_write(create_idea, data)["idea"]
 
 
 def random_idea(driver, user_id):
