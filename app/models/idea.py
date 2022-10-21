@@ -88,6 +88,43 @@ def random_idea(driver, user_id):
         )["i"]
 
 
+def get_disagreeable_idea(driver, user_id):
+    with driver.session() as session:
+        result = session.execute_read(
+            lambda tx: tx.run(
+                """
+                MATCH p = (:User { userId: $user_id })-[:LIKES]->(:Idea)<-[:LIKES]-(:User)-[:LIKES]->(i:Idea)
+                WITH *, relationships(p) as likes
+                WITH *, reduce(acc = 1, like IN likes | acc * like.agreement) AS agree
+                RETURN i, sum(agree) AS agreement
+                ORDER BY agreement
+                LIMIT 1
+                """,
+                user_id=user_id,
+            ).single()
+        )
+        return result.values("i", "agreement")
+
+
+def get_agreeable_idea(driver, user_id):
+    with driver.session() as session:
+        result = session.execute_read(
+            lambda tx: tx.run(
+                """
+                MATCH p = (:User { userId: $user_id })-[:LIKES]->(:Idea)<-[:LIKES]-(:User)-[:LIKES]->(i:Idea)
+                WITH *, relationships(p) as likes
+                WITH *, reduce(acc = 1, like IN likes | acc * like.agreement) AS agree
+                RETURN i, sum(agree) AS agreement
+                ORDER BY agreement DESC
+                LIMIT 1
+                """,
+                user_id=user_id,
+            ).single()
+        )
+
+        return result.values("i", "agreement")
+
+
 def search_ideas(driver, search_str: str):
     """Search an idea by url and description"""
 
