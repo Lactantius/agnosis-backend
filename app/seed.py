@@ -1,7 +1,7 @@
 """Setup database"""
 
 from functools import partial
-from random import randint, choice, seed
+import random
 from neo4j_backup import Extractor, Importer
 from faker import Faker
 
@@ -14,7 +14,7 @@ from .models.idea import add_idea, like_idea, dislike_idea
 fake = Faker()
 Faker.seed(0)
 
-seed(0)
+random.seed(0)
 
 
 def clear_db(tx):
@@ -80,8 +80,8 @@ def seed_db(driver):
     def add_rand_user_and_source(idea: dict) -> IdeaData:
         return {
             **idea,
-            "user_id": choice(registered)["userId"],
-            "source_id": choice(db_sources)["sourceId"],
+            "user_id": random.choice(registered)["userId"],
+            "source_id": random.choice(db_sources)["sourceId"],
         }
 
     db_ready_ideas = map(add_rand_user_and_source, ideas)
@@ -90,15 +90,15 @@ def seed_db(driver):
     # This will overwrite some stuff, but that's fine for now.
     for user in registered:
         for _ in range(10):
-            if choice([True, False]):
+            if random.choice([True, False]):
                 like_idea(
                     driver,
                     user["userId"],
-                    choice(db_ideas)["ideaId"],
-                    randint(-3, 3),
+                    random.choice(db_ideas)["ideaId"],
+                    random.randint(-3, 3),
                 )
             else:
-                dislike_idea(driver, user["userId"], choice(db_ideas)["ideaId"])
+                dislike_idea(driver, user["userId"], random.choice(db_ideas)["ideaId"])
 
 
 def dump_db(driver):

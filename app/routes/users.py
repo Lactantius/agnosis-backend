@@ -23,7 +23,10 @@ def signup():
     username = data["username"]
 
     try:
-        user = register(current_app.driver, email, password, username)
+        user = register(
+            current_app.driver,
+            {"email": email, "password": password, "username": username},
+        )
     except ValidationException as err:
         return (jsonify(error=err.message), 409)
 
