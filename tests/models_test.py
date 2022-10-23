@@ -11,6 +11,7 @@ from app.models.idea import (
     dislike_idea,
     get_disagreeable_idea,
     get_agreeable_idea,
+    delete_idea,
 )
 
 
@@ -194,3 +195,12 @@ def test_can_get_agreeable_idea(app: Flask):
 
         assert idea[0]["url"] == "http://www.butler-vasquez.org/"
         assert idea[1] == 12
+
+
+def test_can_delete_idea(app: Flask):
+    with app.app_context():
+        with get_driver() as driver:
+            idea_id = search_ideas(driver, "cellular")[0][0]
+            result = delete_idea(driver, idea_id)
+
+        assert result == idea_id

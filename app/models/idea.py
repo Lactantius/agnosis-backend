@@ -89,11 +89,20 @@ def random_idea(driver, user_id):
 
 
 def get_disagreeable_idea(driver, user_id):
+    """
+    Get an idea that the user is most likely to find interesting but wrong.
+    1. Gets all idea nodes that are connected by three likes, but that are not directly connected to the user.
+    2. For each path to each node, multiply together the degree of the likes for a
+        crude score of agreement probability.
+    3. For each node, add together the path scores.
+    4. Return the node with the lowest value.
+    """
     with driver.session() as session:
         result = session.execute_read(
             lambda tx: tx.run(
                 """
-                MATCH p = (:User { userId: $user_id })-[:LIKES]->(:Idea)<-[:LIKES]-(:User)-[:LIKES]->(i:Idea)
+                MATCH p = (u:User { userId: $user_id })-[:LIKES]->(:Idea)<-[:LIKES]-(:User)-[:LIKES]->(i:Idea)
+                WHERE NOT (u)-[]->(i)
                 WITH *, relationships(p) as likes
                 WITH *, reduce(acc = 1, like IN likes | acc * like.agreement) AS agree
                 RETURN i, sum(agree) AS agreement
@@ -107,11 +116,16 @@ def get_disagreeable_idea(driver, user_id):
 
 
 def get_agreeable_idea(driver, user_id):
+    """
+    Get an idea that the user is most likely to find interesting and correct.
+    Almost identical to get_disagreeable_idea.
+    """
     with driver.session() as session:
         result = session.execute_read(
             lambda tx: tx.run(
                 """
-                MATCH p = (:User { userId: $user_id })-[:LIKES]->(:Idea)<-[:LIKES]-(:User)-[:LIKES]->(i:Idea)
+                MATCH p = (u:User { userId: $user_id })-[:LIKES]->(:Idea)<-[:LIKES]-(:User)-[:LIKES]->(i:Idea)
+                WHERE NOT (u)-[]->(i)
                 WITH *, relationships(p) as likes
                 WITH *, reduce(acc = 1, like IN likes | acc * like.agreement) AS agree
                 RETURN i, sum(agree) AS agreement
@@ -189,6 +203,25 @@ def dislike_idea(driver, user_id: str, idea_id: str):
 
     with driver.session() as session:
         return session.execute_write(dislike, user_id, idea_id)
+
+
+def delete_idea(driver, idea_id):
+    """Delete an idea"""
+
+    def delete(tx, idea_id):
+        result = tx.run(
+            """
+            MATCH (i:Idea {ideaId: $idea_id})
+            WITH i, i.ideaId AS id
+            DETACH DELETE i
+            RETURN id
+            """,
+            idea_id=idea_id,
+        ).single()
+        return result.value("id")
+
+    with driver.session() as session:
+        return session.execute_write(delete, idea_id)
 
 
 ##############################################################################
