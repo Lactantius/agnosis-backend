@@ -12,6 +12,9 @@ from app.models.idea import (
     get_disagreeable_idea,
     get_agreeable_idea,
     delete_idea,
+    get_liked_ideas,
+    get_disliked_ideas,
+    get_seen_ideas,
 )
 
 
@@ -177,6 +180,7 @@ def test_can_dislike_idea(app: Flask):
         assert disliked == "DISLIKES"
 
 
+@pytest.mark.skip
 def test_can_get_disagreeable_idea(app: Flask):
     with app.app_context():
         with get_driver() as driver:
@@ -187,6 +191,7 @@ def test_can_get_disagreeable_idea(app: Flask):
         assert idea[1] == -24
 
 
+@pytest.mark.skip
 def test_can_get_agreeable_idea(app: Flask):
     with app.app_context():
         with get_driver() as driver:
@@ -197,6 +202,7 @@ def test_can_get_agreeable_idea(app: Flask):
         assert idea[1] == 12
 
 
+@pytest.mark.skip
 def test_can_delete_idea(app: Flask):
     with app.app_context():
         with get_driver() as driver:
@@ -204,3 +210,33 @@ def test_can_delete_idea(app: Flask):
             result = delete_idea(driver, idea_id)
 
         assert result == idea_id
+
+
+def test_can_get_liked_ideas(app: Flask):
+    with app.app_context():
+        with get_driver() as driver:
+            user_id = find_user(driver, "ostewart@example.org")["userId"]
+            ideas = get_liked_ideas(driver, user_id)
+
+        print(ideas)
+        assert len(ideas) == 2
+
+
+def test_can_get_disliked_ideas(app: Flask):
+    with app.app_context():
+        with get_driver() as driver:
+            user_id = find_user(driver, "ostewart@example.org")["userId"]
+            ideas = get_disliked_ideas(driver, user_id)
+
+        print(ideas)
+        assert len(ideas) == 3
+
+
+def test_can_get_seen_ideas(app: Flask):
+    with app.app_context():
+        with get_driver() as driver:
+            user_id = find_user(driver, "ostewart@example.org")["userId"]
+            ideas = get_seen_ideas(driver, user_id)
+
+        print(ideas)
+        assert len(ideas) == 7

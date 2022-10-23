@@ -205,7 +205,7 @@ def dislike_idea(driver, user_id: str, idea_id: str):
         return session.execute_write(dislike, user_id, idea_id)
 
 
-def delete_idea(driver, idea_id):
+def delete_idea(driver, idea_id) -> str | None:
     """Delete an idea"""
 
     def delete(tx, idea_id):
@@ -222,6 +222,57 @@ def delete_idea(driver, idea_id):
 
     with driver.session() as session:
         return session.execute_write(delete, idea_id)
+
+
+def get_liked_ideas(driver, user_id: str) -> list:
+    """Get all ideas that a user liked"""
+
+    def user_liked(tx, user_id):
+        result = tx.run(
+            """
+            MATCH (u:User {userId: $user_id})-[:LIKES]->(i:Idea)
+            RETURN i
+            """,
+            user_id=user_id,
+        ).value("i")
+        return result
+
+    with driver.session() as session:
+        return session.execute_read(user_liked, user_id)
+
+
+def get_disliked_ideas(driver, user_id: str) -> list:
+    """Get all ideas that a user disliked"""
+
+    def user_disliked(tx, user_id):
+        result = tx.run(
+            """
+            MATCH (u:User {userId: $user_id})-[:DISLIKES]->(i:Idea)
+            RETURN i
+            """,
+            user_id=user_id,
+        ).value("i")
+        return result
+
+    with driver.session() as session:
+        return session.execute_read(user_disliked, user_id)
+
+
+def get_seen_ideas(driver, user_id: str) -> list:
+    """Get all ideas that a user has a direct connection with"""
+
+    def user_seen(tx, user_id):
+        result = tx.run(
+            """
+            MATCH (u:User {userId: $user_id})-[]->(i:Idea)
+            RETURN i
+            """,
+            user_id=user_id,
+        ).value("i")
+        return result
+
+    with driver.session() as session:
+        return session.execute_read(user_seen, user_id)
 
 
 ##############################################################################
