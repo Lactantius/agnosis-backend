@@ -283,6 +283,44 @@ def get_seen_ideas(driver, user_id: str) -> list:
         return session.execute_read(user_seen, user_id)
 
 
+def get_idea_details(driver, idea_id):
+    """Get all details of an idea"""
+
+    with driver.session() as session:
+        return session.execute_read(
+            lambda tx: tx.run(
+                """
+            MATCH (i:Idea {ideaId: $idea_id})
+            RETURN i {
+                .*,
+                createdAt: toString(i.createdAt)
+            }
+            """,
+                idea_id=idea_id,
+            ).single()[0]
+        )
+
+
+def get_idea_with_reaction(driver, idea_id, user_id):
+    """Get idea details along with user reaction"""
+
+    with driver.session() as session:
+        result = session.execute_read(
+            lambda tx: tx.run(
+                """
+                MATCH (u:User {userId: $user_id})-[r]->(i:Idea {ideaId: $idea_id})
+                RETURN i {
+                    .*,
+                    createdAt: toString(i.createdAt)
+                }, r
+                """,
+                idea_id=idea_id,
+                user_id=user_id,
+            ).values("i", "r")[0]
+        )
+        return {**result[0], "reaction": (result[1].type, result[1]["agreement"])}
+
+
 ##############################################################################
 # Helper functions
 #

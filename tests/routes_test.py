@@ -217,6 +217,7 @@ def test_get_agreeable_idea(client: FlaskClient, auth_headers) -> None:
         assert res.json["idea"]["url"] is not None
 
 
+@pytest.mark.skip
 def test_like_idea(client: FlaskClient, auth_headers) -> None:
     """Can one like an idea?"""
 
@@ -233,6 +234,7 @@ def test_like_idea(client: FlaskClient, auth_headers) -> None:
         assert res.json["reaction"]["agreement"] == -2
 
 
+@pytest.mark.skip
 def test_dislike_idea(client: FlaskClient, auth_headers) -> None:
     """Can one dislike an idea?"""
 
@@ -249,6 +251,7 @@ def test_dislike_idea(client: FlaskClient, auth_headers) -> None:
         assert res.json["reaction"]["type"] == "DISLIKES"
 
 
+@pytest.mark.skip
 def test_get_viewed_ideas(client: FlaskClient, auth_headers) -> None:
     """Can one get all previously seen ideas?"""
 
@@ -256,3 +259,20 @@ def test_get_viewed_ideas(client: FlaskClient, auth_headers) -> None:
         res = client.get("/api/ideas/viewed", headers=auth_headers)
         assert res.status_code == 200
         assert res.json["ideas"] is not None
+
+
+def test_get_idea_details_with_reaction(client: FlaskClient, auth_headers) -> None:
+    """Can one get an idea along with the reaction to that idea?"""
+
+    with client:
+        id = client.get("/api/ideas/viewed", headers=auth_headers).json["ideas"][0][
+            "ideaId"
+        ]
+        res = client.get(f"/api/ideas/{id}", headers=auth_headers)
+        assert res.status_code == 200
+        assert res.json["idea"]["url"] is not None
+
+
+@pytest.mark.skip
+def test_delete_idea(client: FlaskClient, auth_headers) -> None:
+    """Can a user delete an idea?"""
