@@ -2,17 +2,20 @@
 
 from functools import partial
 import random
-from neo4j_backup import Extractor, Importer
-from faker import Faker
 
-from .fake_data import users, sources, ideas
 from .types import RegistrationData, IdeaData
 from .models.user import register
 from .models.source import add_source
 from .models.idea import add_idea, like_idea, dislike_idea
 
-fake = Faker()
-Faker.seed(0)
+try:
+    from faker import Faker
+    from .fake_data import users, sources, ideas
+
+    fake = Faker()
+    Faker.seed(0)
+except ImportError:
+    print("Faker not imported. Production env?")
 
 
 def clear_db(tx):
