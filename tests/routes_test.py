@@ -13,6 +13,20 @@ def client(app) -> FlaskClient:
     return app.test_client()
 
 
+@pytest.fixture
+def auth_headers(client):
+    user = client.post(
+        "/api/users/login",
+        json={
+            "email": "ostewart@example.org",
+            "password": "7(S7fOnb!q",
+        },
+    ).json
+    token = user["user"]["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    return headers
+
+
 ##############################################################################
 # Auth
 #
@@ -179,21 +193,12 @@ def test_get_random_idea(client: FlaskClient) -> None:
         assert res.json["idea"]["url"] is not None
 
 
-def test_get_disagreeable_idea(client: FlaskClient) -> None:
+def test_get_disagreeable_idea(client: FlaskClient, auth_headers) -> None:
     """Can one get a disagreeable idea?"""
 
     with client:
 
-        user = client.post(
-            "/api/users/login",
-            json={
-                "email": "ostewart@example.org",
-                "password": "7(S7fOnb!q",
-            },
-        ).json
-        token = user["user"]["token"]
-        headers = {"Authorization": f"Bearer {token}"}
-        res = client.get(f"/api/ideas/disagreeable", headers=headers)
+        res = client.get(f"/api/ideas/disagreeable", headers=auth_headers)
 
         print(res.json)
         assert res.status_code == 200
