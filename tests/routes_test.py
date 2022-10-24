@@ -247,3 +247,12 @@ def test_dislike_idea(client: FlaskClient, auth_headers) -> None:
         )
         assert res.status_code == 200
         assert res.json["reaction"]["type"] == "DISLIKES"
+
+
+def test_get_viewed_ideas(client: FlaskClient, auth_headers) -> None:
+    """Can one get all previously seen ideas?"""
+
+    with client:
+        res = client.get("/api/ideas/viewed", headers=auth_headers)
+        assert res.status_code == 200
+        assert res.json["ideas"] is not None

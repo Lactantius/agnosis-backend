@@ -270,7 +270,10 @@ def get_seen_ideas(driver, user_id: str) -> list:
         result = tx.run(
             """
             MATCH (u:User {userId: $user_id})-[]->(i:Idea)
-            RETURN i
+            RETURN i {
+                .*,
+                createdAt: toString(i.createdAt)
+            }
             """,
             user_id=user_id,
         ).value("i")

@@ -11,6 +11,7 @@ from app.models.idea import (
     get_ideas,
     like_idea,
     dislike_idea,
+    get_seen_ideas,
 )
 
 ideas = Blueprint("ideas", __name__, url_prefix="/api/ideas")
@@ -73,3 +74,15 @@ def react_to_idea(idea_id):
         reaction = dislike_idea(current_app.driver, user_id, idea_id)
 
     return (jsonify(reaction=reaction), 200)
+
+
+@ideas.get("/viewed")
+@jwt_required()
+def viewed_ideas():
+    claims = get_jwt()
+    user_id = claims.get("userId", None)
+
+    ideas = get_seen_ideas(current_app.driver, user_id)
+    print(ideas)
+
+    return jsonify(ideas=ideas)
