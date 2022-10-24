@@ -98,21 +98,24 @@ def get_disagreeable_idea(driver, user_id):
     4. Return the node with the lowest value.
     """
     with driver.session() as session:
-        result = session.execute_read(
+        return session.execute_read(
             lambda tx: tx.run(
                 """
                 MATCH p = (u:User { userId: $user_id })-[:LIKES]->(:Idea)<-[:LIKES]-(:User)-[:LIKES]->(i:Idea)
                 WHERE NOT (u)-[]->(i)
                 WITH *, relationships(p) as likes
                 WITH *, reduce(acc = 1, like IN likes | acc * like.agreement) AS agree
-                RETURN i, sum(agree) AS agreement
-                ORDER BY agreement
+                RETURN i {
+                    .*,
+                    createdAt: toString(i.createdAt),
+                    agreement: sum(agree)
+                }
+                ORDER BY i.agreement
                 LIMIT 1
                 """,
                 user_id=user_id,
-            ).single()
+            ).single()[0]
         )
-        return result.values("i", "agreement")
 
 
 def get_agreeable_idea(driver, user_id):

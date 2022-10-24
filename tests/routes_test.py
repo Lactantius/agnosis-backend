@@ -18,6 +18,7 @@ def client(app) -> FlaskClient:
 #
 
 
+@pytest.mark.skip
 def test_can_signup(client: FlaskClient) -> None:
     """Can one sign up for a new account?"""
 
@@ -34,6 +35,7 @@ def test_can_signup(client: FlaskClient) -> None:
         assert res.json["user"]["email"] == "apitest@apitest.com"
 
 
+@pytest.mark.skip
 def test_error_message_if_username_or_email_not_unique(client: FlaskClient) -> None:
     """Will correct error message show?"""
 
@@ -61,6 +63,7 @@ def test_error_message_if_username_or_email_not_unique(client: FlaskClient) -> N
         assert "already exists" in bad_email.json["error"]
 
 
+@pytest.mark.skip
 def test_can_login(client: FlaskClient) -> None:
     """Can one login?"""
 
@@ -76,6 +79,7 @@ def test_can_login(client: FlaskClient) -> None:
         assert res.json["user"]["email"] == "user1@user1.com"
 
 
+@pytest.mark.skip
 def test_cannot_login_with_invalid_credentials(client: FlaskClient) -> None:
     """Is login refused with bad credentials?"""
 
@@ -101,6 +105,7 @@ def test_cannot_login_with_invalid_credentials(client: FlaskClient) -> None:
 #
 
 
+@pytest.mark.skip
 def test_can_view_user_info(client: FlaskClient) -> None:
     """Can a user view user details?"""
     with client:
@@ -121,6 +126,7 @@ def test_can_view_user_info(client: FlaskClient) -> None:
         assert res.json["user"].get("password", None) is None
 
 
+@pytest.mark.skip
 def test_cannot_view_user_info_without_proper_token(client: FlaskClient) -> None:
     """Can only the user view user details?"""
 
@@ -161,6 +167,7 @@ def test_cannot_view_user_info_without_proper_token(client: FlaskClient) -> None
 #
 
 
+@pytest.mark.skip
 def test_get_random_idea(client: FlaskClient) -> None:
     """Can one get a random idea?"""
 
@@ -168,5 +175,26 @@ def test_get_random_idea(client: FlaskClient) -> None:
 
         res = client.get("/api/ideas/random")
 
+        assert res.status_code == 200
+        assert res.json["idea"]["url"] is not None
+
+
+def test_get_disagreeable_idea(client: FlaskClient) -> None:
+    """Can one get a disagreeable idea?"""
+
+    with client:
+
+        user = client.post(
+            "/api/users/login",
+            json={
+                "email": "ostewart@example.org",
+                "password": "7(S7fOnb!q",
+            },
+        ).json
+        token = user["user"]["token"]
+        headers = {"Authorization": f"Bearer {token}"}
+        res = client.get(f"/api/ideas/disagreeable", headers=headers)
+
+        print(res.json)
         assert res.status_code == 200
         assert res.json["idea"]["url"] is not None

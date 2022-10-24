@@ -2,8 +2,14 @@
 
 from flask import Blueprint, jsonify, request, current_app
 from flask.wrappers import Response
+from flask_jwt_extended import jwt_required, get_jwt
 
-from app.models.idea import random_idea
+from app.models.idea import (
+    random_idea,
+    get_agreeable_idea,
+    get_disagreeable_idea,
+    get_ideas,
+)
 
 ideas = Blueprint("ideas", __name__, url_prefix="/api/ideas")
 
@@ -19,6 +25,19 @@ def get_idea() -> tuple[Response, int]:
     #     "source": "Example news source",
     # }
     idea = random_idea(current_app.driver, "fake")
+
+    return (jsonify(idea=idea), 200)
+
+
+@ideas.get("/disagreeable")
+@jwt_required()
+def disagreeable_idea():
+    """Get an idea that the user should be interested in but disagree with"""
+
+    claims = get_jwt()
+    user_id = claims.get("userId", None)
+
+    idea = get_disagreeable_idea(current_app.driver, user_id)
     print(idea)
 
     return (jsonify(idea=idea), 200)

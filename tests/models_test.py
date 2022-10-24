@@ -218,7 +218,6 @@ def test_can_get_liked_ideas(app: Flask):
             user_id = find_user(driver, "ostewart@example.org")["userId"]
             ideas = get_liked_ideas(driver, user_id)
 
-        print(ideas)
         assert len(ideas) == 2
 
 
@@ -228,7 +227,6 @@ def test_can_get_disliked_ideas(app: Flask):
             user_id = find_user(driver, "ostewart@example.org")["userId"]
             ideas = get_disliked_ideas(driver, user_id)
 
-        print(ideas)
         assert len(ideas) == 3
 
 
@@ -238,5 +236,4 @@ def test_can_get_seen_ideas(app: Flask):
             user_id = find_user(driver, "ostewart@example.org")["userId"]
             ideas = get_seen_ideas(driver, user_id)
 
-        print(ideas)
         assert len(ideas) == 7

@@ -14,8 +14,6 @@ from .models.idea import add_idea, like_idea, dislike_idea
 fake = Faker()
 Faker.seed(0)
 
-random.seed(0)
-
 
 def clear_db(tx):
     """Delete all from db"""
@@ -46,6 +44,7 @@ def set_db_properties(driver):
 
 def seed_db(driver):
     """Set initial values for db"""
+    random.seed(0)
     user1 = register(
         driver,
         {"email": "user1@user1.com", "password": "password1", "username": "user1"},
@@ -74,6 +73,7 @@ def seed_db(driver):
             "description": "Western society is more decadent than you think",
         },
     )
+    print(users)
     registered = list(map(partial(register, driver), users))
     db_sources = list(map(partial(add_source, driver), sources))
 
