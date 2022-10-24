@@ -231,3 +231,19 @@ def test_like_idea(client: FlaskClient, auth_headers) -> None:
         )
         assert res.status_code == 200
         assert res.json["reaction"]["agreement"] == -2
+
+
+def test_dislike_idea(client: FlaskClient, auth_headers) -> None:
+    """Can one dislike an idea?"""
+
+    with client:
+        idea_id = client.get("/api/ideas/disagreeable", headers=auth_headers).json[
+            "idea"
+        ]["ideaId"]
+        res = client.post(
+            f"/api/ideas/{idea_id}/react",
+            json={"type": "dislike"},
+            headers=auth_headers,
+        )
+        assert res.status_code == 200
+        assert res.json["reaction"]["type"] == "DISLIKES"

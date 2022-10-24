@@ -199,12 +199,12 @@ def dislike_idea(driver, user_id: str, idea_id: str):
             OPTIONAL MATCH (u)-[l:LIKES]->(i)
             DELETE l
             MERGE (u)-[d:DISLIKES]->(i)
-            RETURN d
+            RETURN i.ideaId as id, d
             """,
             user_id=user_id,
             idea_id=idea_id,
-        ).single()
-        return result["d"].type
+        ).values("id", "d")[0]
+        return {"ideaId": result[0], "type": result[1].type}
 
     with driver.session() as session:
         return session.execute_write(dislike, user_id, idea_id)
