@@ -198,8 +198,18 @@ def test_get_disagreeable_idea(client: FlaskClient, auth_headers) -> None:
 
     with client:
 
-        res = client.get(f"/api/ideas/disagreeable", headers=auth_headers)
+        res = client.get("/api/ideas/disagreeable", headers=auth_headers)
 
-        print(res.json)
+        assert res.status_code == 200
+        assert res.json["idea"]["url"] is not None
+
+
+def test_get_agreeable_idea(client: FlaskClient, auth_headers) -> None:
+    """Can one get an agreeable idea?"""
+
+    with client:
+
+        res = client.get("/api/ideas/agreeable", headers=auth_headers)
+
         assert res.status_code == 200
         assert res.json["idea"]["url"] is not None

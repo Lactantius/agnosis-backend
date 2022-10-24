@@ -73,7 +73,6 @@ def seed_db(driver):
             "description": "Western society is more decadent than you think",
         },
     )
-    print(users)
     registered = list(map(partial(register, driver), users))
     db_sources = list(map(partial(add_source, driver), sources))
 

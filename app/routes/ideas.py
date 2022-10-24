@@ -38,6 +38,18 @@ def disagreeable_idea():
     user_id = claims.get("userId", None)
 
     idea = get_disagreeable_idea(current_app.driver, user_id)
-    print(idea)
+
+    return (jsonify(idea=idea), 200)
+
+
+@ideas.get("/agreeable")
+@jwt_required()
+def agreeable_idea():
+    """Get an idea that the user should be interested in but disagree with"""
+
+    claims = get_jwt()
+    user_id = claims.get("userId", None)
+
+    idea = get_agreeable_idea(current_app.driver, user_id)
 
     return (jsonify(idea=idea), 200)
