@@ -273,6 +273,18 @@ def test_get_idea_details_with_reaction(client: FlaskClient, auth_headers) -> No
         assert res.json["idea"]["url"] is not None
 
 
+def test_get_idea_details_with_all_reactions(client: FlaskClient, auth_headers) -> None:
+    """Can one get an idea with all reactions?"""
+
+    with client:
+        id = client.get("/api/ideas/viewed", headers=auth_headers).json["ideas"][0][
+            "ideaId"
+        ]
+        res = client.get(f"/api/ideas/{id}/reactions", headers=auth_headers)
+        assert res.status_code == 200
+        assert res.json["idea"]["url"] is not None
+
+
 @pytest.mark.skip
 def test_delete_idea(client: FlaskClient, auth_headers) -> None:
     """Can a user delete an idea?"""

@@ -321,6 +321,26 @@ def get_idea_with_reaction(driver, idea_id, user_id):
         return {**result[0], "reaction": (result[1].type, result[1]["agreement"])}
 
 
+def get_idea_with_all_reactions(driver, idea_id):
+    """Get idea details with anonymous reactions statistics"""
+
+    with driver.session() as session:
+        return session.execute_read(
+            lambda tx: tx.run(
+                """
+                MATCH (:User)-[r]->(i:Idea {ideaId: $idea_id})
+                RETURN DISTINCT i {
+                    .*,
+                    createdAt: toString(i.createdAt),
+                    reactions: collect(type(r)),
+                    agreement: collect(r.agreement)
+                }
+                """,
+                idea_id=idea_id,
+            ).single()["i"]
+        )
+
+
 ##############################################################################
 # Helper functions
 #

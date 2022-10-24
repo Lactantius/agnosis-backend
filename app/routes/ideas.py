@@ -13,6 +13,7 @@ from app.models.idea import (
     dislike_idea,
     get_seen_ideas,
     get_idea_with_reaction,
+    get_idea_with_all_reactions,
 )
 
 ideas = Blueprint("ideas", __name__, url_prefix="/api/ideas")
@@ -96,4 +97,12 @@ def idea_details(idea_id):
     user_id = claims.get("userId", None)
 
     idea = get_idea_with_reaction(current_app.driver, idea_id, user_id)
+    return jsonify(idea=idea)
+
+
+@ideas.get("/<string:idea_id>/reactions")
+@jwt_required()
+def idea_reactions(idea_id):
+
+    idea = get_idea_with_all_reactions(current_app.driver, idea_id)
     return jsonify(idea=idea)
