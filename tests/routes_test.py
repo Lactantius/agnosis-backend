@@ -193,6 +193,7 @@ def test_get_random_idea(client: FlaskClient) -> None:
         assert res.json["idea"]["url"] is not None
 
 
+@pytest.mark.skip
 def test_get_disagreeable_idea(client: FlaskClient, auth_headers) -> None:
     """Can one get a disagreeable idea?"""
 
@@ -204,6 +205,7 @@ def test_get_disagreeable_idea(client: FlaskClient, auth_headers) -> None:
         assert res.json["idea"]["url"] is not None
 
 
+@pytest.mark.skip
 def test_get_agreeable_idea(client: FlaskClient, auth_headers) -> None:
     """Can one get an agreeable idea?"""
 
@@ -213,3 +215,19 @@ def test_get_agreeable_idea(client: FlaskClient, auth_headers) -> None:
 
         assert res.status_code == 200
         assert res.json["idea"]["url"] is not None
+
+
+def test_like_idea(client: FlaskClient, auth_headers) -> None:
+    """Can one like an idea?"""
+
+    with client:
+        idea_id = client.get("/api/ideas/disagreeable", headers=auth_headers).json[
+            "idea"
+        ]["ideaId"]
+        res = client.post(
+            f"/api/ideas/{idea_id}/react",
+            json={"type": "like", "agreement": -2},
+            headers=auth_headers,
+        )
+        assert res.status_code == 200
+        assert res.json["reaction"]["agreement"] == -2

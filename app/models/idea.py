@@ -176,13 +176,13 @@ def like_idea(driver, user_id: str, idea_id: str, agreement: int) -> int:
             DELETE d
             MERGE (u)-[l:LIKES]->(i)
             SET l.agreement=$agreement
-            RETURN l.agreement as agreement
+            RETURN i.ideaId AS id, l, l.agreement AS agreement
             """,
             user_id=user_id,
             idea_id=idea_id,
             agreement=agreement,
-        ).single()
-        return result["agreement"]
+        ).values("id", "l", "agreement")[0]
+        return {"ideaId": result[0], "type": result[1].type, "agreement": result[2]}
 
     with driver.session() as session:
         return session.execute_write(like, user_id, idea_id, agreement)

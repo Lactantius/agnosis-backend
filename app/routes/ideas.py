@@ -9,6 +9,8 @@ from app.models.idea import (
     get_agreeable_idea,
     get_disagreeable_idea,
     get_ideas,
+    like_idea,
+    dislike_idea,
 )
 
 ideas = Blueprint("ideas", __name__, url_prefix="/api/ideas")
@@ -53,3 +55,21 @@ def agreeable_idea():
     idea = get_agreeable_idea(current_app.driver, user_id)
 
     return (jsonify(idea=idea), 200)
+
+
+@ideas.post("/<string:idea_id>/react")
+@jwt_required()
+def react_to_idea(idea_id):
+
+    claims = get_jwt()
+    user_id = claims.get("userId", None)
+
+    data = request.get_json()
+    type = data["type"]
+
+    if type == "like":
+        reaction = like_idea(current_app.driver, user_id, idea_id, data["agreement"])
+    else:
+        reaction = dislike_idea(current_app.driver, user_id, idea_id)
+
+    return (jsonify(reaction=reaction), 200)
