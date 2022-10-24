@@ -14,7 +14,7 @@ def client(app) -> FlaskClient:
 
 
 @pytest.fixture
-def auth_headers(client):
+def logged_in_user(client):
     user = client.post(
         "/api/users/login",
         json={
@@ -22,7 +22,12 @@ def auth_headers(client):
             "password": "7(S7fOnb!q",
         },
     ).json
-    token = user["user"]["token"]
+    return user
+
+
+@pytest.fixture
+def auth_headers(logged_in_user):
+    token = logged_in_user["user"]["token"]
     headers = {"Authorization": f"Bearer {token}"}
     return headers
 
@@ -234,7 +239,6 @@ def test_like_idea(client: FlaskClient, auth_headers) -> None:
         assert res.json["reaction"]["agreement"] == -2
 
 
-@pytest.mark.skip
 def test_dislike_idea(client: FlaskClient, auth_headers) -> None:
     """Can one dislike an idea?"""
 
@@ -261,6 +265,7 @@ def test_get_viewed_ideas(client: FlaskClient, auth_headers) -> None:
         assert res.json["ideas"] is not None
 
 
+@pytest.mark.skip
 def test_get_idea_details_with_reaction(client: FlaskClient, auth_headers) -> None:
     """Can one get an idea along with the reaction to that idea?"""
 
@@ -273,6 +278,7 @@ def test_get_idea_details_with_reaction(client: FlaskClient, auth_headers) -> No
         assert res.json["idea"]["url"] is not None
 
 
+@pytest.mark.skip
 def test_get_idea_details_with_all_reactions(client: FlaskClient, auth_headers) -> None:
     """Can one get an idea with all reactions?"""
 
@@ -285,6 +291,26 @@ def test_get_idea_details_with_all_reactions(client: FlaskClient, auth_headers) 
         assert res.json["idea"]["url"] is not None
 
 
-@pytest.mark.skip
-def test_delete_idea(client: FlaskClient, auth_headers) -> None:
+def test_delete_idea(client: FlaskClient, logged_in_user, auth_headers) -> None:
     """Can a user delete an idea?"""
+
+    with client:
+        user_id = logged_in_user["user"]["sub"]
+        idea_id = client.get(f"/api/ideas/user/{user_id}", headers=auth_headers).json[
+            "ideas"
+        ][0]["ideaId"]
+        res = client.delete(f"/api/ideas/{idea_id}", headers=auth_headers)
+        assert res.status_code == 200
+        assert res.json["deleted"] == idea_id
+
+
+@pytest.mark.skip
+def test_get_posted_ideas(client: FlaskClient, logged_in_user, auth_headers) -> None:
+    """Can one view all ideas posted by a user?"""
+
+    with client:
+        id = logged_in_user["user"]["sub"]
+        res = client.get(f"/api/ideas/user/{id}", headers=auth_headers)
+        print(res.json)
+        assert res.status_code == 200
+        assert len(res.json["ideas"]) > 0

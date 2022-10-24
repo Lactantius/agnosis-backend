@@ -39,7 +39,7 @@ def create_idea(tx, data: IdeaData):
         """
         MATCH (u:User {userId: $user_id})
         MATCH (s:Source {sourceId: $source_id})
-        MERGE (i:Idea {url: $url, description: $description})<-[f:AUTHORED]-(s)
+        MERGE (u)-[:POSTED]->(i:Idea {url: $url, description: $description})<-[f:AUTHORED]-(s)
         ON CREATE SET i.createdAt = datetime(), i.ideaId = randomUuid()
         RETURN i {
             .*
@@ -210,10 +210,23 @@ def dislike_idea(driver, user_id: str, idea_id: str):
         return session.execute_write(dislike, user_id, idea_id)
 
 
-def delete_idea(driver, idea_id) -> str | None:
+def delete_idea(driver, idea_id, user_id, admin=False) -> str | None:
     """Delete an idea"""
 
-    def delete(tx, idea_id):
+    def user_delete(tx, idea_id, user_id):
+        result = tx.run(
+            """
+            MATCH (u:User {userId: $user_id})-[:POSTED]->(i:Idea {ideaId: $idea_id})
+            WITH i, i.ideaId AS id
+            DETACH DELETE i
+            RETURN id
+            """,
+            idea_id=idea_id,
+            user_id=user_id,
+        ).single()
+        return result.value("id")
+
+    def admin_delete(tx, idea_id):
         result = tx.run(
             """
             MATCH (i:Idea {ideaId: $idea_id})
@@ -226,7 +239,10 @@ def delete_idea(driver, idea_id) -> str | None:
         return result.value("id")
 
     with driver.session() as session:
-        return session.execute_write(delete, idea_id)
+        if admin:
+            return session.execute_write(admin_delete, idea_id)
+        else:
+            return session.execute_write(user_delete, idea_id, user_id)
 
 
 def get_liked_ideas(driver, user_id: str) -> list:
@@ -338,6 +354,24 @@ def get_idea_with_all_reactions(driver, idea_id):
                 """,
                 idea_id=idea_id,
             ).single()["i"]
+        )
+
+
+def get_posted_ideas(driver, user_id):
+    """Get all ideas posted by a user"""
+
+    with driver.session() as session:
+        return session.execute_read(
+            lambda tx: tx.run(
+                """
+                MATCH (u:User {userId: $user_id})-[:POSTED]->(i:Idea)
+                RETURN i {
+                    .*,
+                    createdAt: toString(i.createdAt)
+                }
+                """,
+                user_id=user_id,
+            ).value("i")
         )
 
 

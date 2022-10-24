@@ -14,6 +14,8 @@ from app.models.idea import (
     get_seen_ideas,
     get_idea_with_reaction,
     get_idea_with_all_reactions,
+    delete_idea,
+    get_posted_ideas,
 )
 
 ideas = Blueprint("ideas", __name__, url_prefix="/api/ideas")
@@ -106,3 +108,30 @@ def idea_reactions(idea_id):
 
     idea = get_idea_with_all_reactions(current_app.driver, idea_id)
     return jsonify(idea=idea)
+
+
+@ideas.delete("/<string:idea_id>")
+@jwt_required()
+def delete_single_idea(idea_id):
+
+    claims = get_jwt()
+    user_id = claims.get("userId", None)
+
+    user_id = claims.get("userId", None)
+    query_res = delete_idea(current_app.driver, idea_id, user_id)
+
+    return jsonify({"deleted": query_res})
+
+
+@ideas.get("/user/<string:user_id>")
+@jwt_required()
+def posted_by_user(user_id):
+    """Get ideas posted by a user"""
+
+    claims = get_jwt()
+    current_user = claims.get("userId", None)
+    if current_user != user_id:
+        return (jsonify(error="You are not authorized to view this resource"), 403)
+
+    ideas = get_posted_ideas(current_app.driver, user_id)
+    return jsonify(ideas=ideas)
