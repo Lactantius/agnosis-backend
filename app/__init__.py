@@ -4,6 +4,7 @@ import os
 from flask import Flask
 from datetime import timedelta
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 
 from .routes.ideas import ideas
 from .routes.users import users
@@ -54,6 +55,8 @@ def create_app():
             # import_dev_data(driver)
 
     jwt = JWTManager(app)
+
+    CORS(app)
 
     app.register_blueprint(ideas)
     app.register_blueprint(users)
