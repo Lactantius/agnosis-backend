@@ -35,21 +35,39 @@ def get_ideas(tx, sort, order, limit, skip):
 
 def create_idea(tx, data: IdeaData):
     """Transaction function for adding a new idea to the db"""
-    return tx.run(
+    if data.get("source_id", None):
+        return tx.run(
+            """
+            MATCH (u:User {userId: $user_id})
+            MATCH (s:Source {sourceId: $source_id})
+            MERGE (u)-[:POSTED]->(i:Idea {url: $url, description: $description})<-[f:AUTHORED]-(s)
+            ON CREATE SET i.createdAt = datetime(), i.ideaId = randomUuid()
+            RETURN i {
+                .*,
+                createdAt: toString(i.createdAt)
+            } AS idea
+            """,
+            url=data["url"],
+            user_id=data["user_id"],
+            source_id=data["source_id"],
+            description=data["description"],
+        ).single()
+
+    result = tx.run(
         """
         MATCH (u:User {userId: $user_id})
-        MATCH (s:Source {sourceId: $source_id})
-        MERGE (u)-[:POSTED]->(i:Idea {url: $url, description: $description})<-[f:AUTHORED]-(s)
+        MERGE (u)-[:POSTED]->(i:Idea {url: $url, description: $description})
         ON CREATE SET i.createdAt = datetime(), i.ideaId = randomUuid()
         RETURN i {
-            .*
+            .*,
+            createdAt: toString(i.createdAt)
         } AS idea
         """,
         url=data["url"],
         user_id=data["user_id"],
-        source_id=data["source_id"],
         description=data["description"],
     ).single()
+    return result
 
 
 ##############################################################################
@@ -98,7 +116,7 @@ def get_disagreeable_idea(driver, user_id):
     4. Return the node with the lowest value.
     """
     with driver.session() as session:
-        return session.execute_read(
+        result = session.execute_read(
             lambda tx: tx.run(
                 """
                 MATCH p = (u:User { userId: $user_id })-[:LIKES]->(:Idea)<-[:LIKES]-(:User)-[:LIKES]->(i:Idea)
@@ -114,8 +132,9 @@ def get_disagreeable_idea(driver, user_id):
                 LIMIT 1
                 """,
                 user_id=user_id,
-            ).single()[0]
+            ).single()
         )
+        return result
 
 
 def get_agreeable_idea(driver, user_id):

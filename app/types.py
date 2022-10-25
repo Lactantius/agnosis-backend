@@ -10,7 +10,7 @@ class RegistrationData(TypedDict):
 class IdeaData(TypedDict):
     url: str
     user_id: str
-    source_id: str
+    source_id: str | None
     description: str
 
 

@@ -5,6 +5,7 @@ from flask.wrappers import Response
 from flask_jwt_extended import jwt_required, get_jwt
 
 from app.models.idea import (
+    add_idea,
     random_idea,
     get_agreeable_idea,
     get_disagreeable_idea,
@@ -21,16 +22,36 @@ from app.models.idea import (
 ideas = Blueprint("ideas", __name__, url_prefix="/api/ideas")
 
 
+@ideas.post("/")
+@jwt_required()
+def post_idea() -> tuple[Response, int]:
+    """Post a new idea"""
+
+    claims = get_jwt()
+    user_id = claims.get("userId", None)
+
+    data = request.get_json()
+    url = data.get("url", None)
+    description = data.get("description", None)
+    source_id = data.get("sourceId", None)
+
+    idea = add_idea(
+        current_app.driver,
+        {
+            "url": url,
+            "description": description,
+            "user_id": user_id,
+            "source_id": source_id,
+        },
+    )
+
+    return (jsonify(idea=idea), 201)
+
+
 @ideas.get("/random")
 def get_idea() -> tuple[Response, int]:
     """Get an idea from the database"""
 
-    # idea = {
-    #     "id": 1,
-    #     "text": "An idea",
-    #     "url": "https://example.com/idea",
-    #     "source": "Example news source",
-    # }
     idea = random_idea(current_app.driver, "fake")
 
     return (jsonify(idea=idea), 200)
