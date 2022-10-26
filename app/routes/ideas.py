@@ -7,6 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 from app.models.idea import (
     add_idea,
     random_idea,
+    random_unseen_idea,
     get_agreeable_idea,
     get_disagreeable_idea,
     get_ideas,
@@ -57,6 +58,22 @@ def get_idea() -> tuple[Response, int]:
     return (jsonify(idea=idea), 200)
 
 
+@ideas.get("/random-unseen")
+@jwt_required()
+def get_unseen_idea() -> tuple[Response, int]:
+    """Get a random idea that the user has not yet seen"""
+
+    claims = get_jwt()
+    user_id = claims.get("userId", None)
+
+    idea = random_unseen_idea(current_app.driver, user_id)
+
+    if idea is None:
+        return (jsonify(error="We are all out of idea you haven't seen before."), 404)
+
+    return (jsonify(idea=idea[0]), 200)
+
+
 @ideas.get("/disagreeable")
 @jwt_required()
 def disagreeable_idea():
@@ -67,7 +84,10 @@ def disagreeable_idea():
 
     idea = get_disagreeable_idea(current_app.driver, user_id)
 
-    return (jsonify(idea=idea), 200)
+    if idea is None:
+        return (jsonify(error="We are all out of ideas for you to disagree with."), 404)
+
+    return (jsonify(idea=idea[0]), 200)
 
 
 @ideas.get("/agreeable")

@@ -106,6 +106,29 @@ def random_idea(driver, user_id):
         )["i"]
 
 
+def random_unseen_idea(driver, user_id):
+    with driver.session() as session:
+        result = session.execute_read(
+            lambda tx: tx.run(
+                """
+                MATCH (u:User {userId: $user_id})
+                MATCH (i:Idea)
+                WHERE NOT (u)-[]->(i)
+                RETURN i {
+                    .*,
+                    createdAt: toString(i.createdAt)
+                }
+                ORDER BY rand()
+                LIMIT 1
+                """,
+                user_id=user_id,
+            ).value("i")
+        )
+        current_app.logger.warning("Print this")
+        current_app.logger.warning(result)
+        return result
+
+
 def get_disagreeable_idea(driver, user_id):
     """
     Get an idea that the user is most likely to find interesting but wrong.
@@ -195,13 +218,13 @@ def like_idea(driver, user_id: str, idea_id: str, agreement: int) -> int:
             DELETE d
             MERGE (u)-[l:LIKES]->(i)
             SET l.agreement=$agreement
-            RETURN i.ideaId AS id, l, l.agreement AS agreement
+            RETURN i.ideaId AS id, type(l) AS type, l.agreement AS agreement
             """,
             user_id=user_id,
             idea_id=idea_id,
             agreement=agreement,
-        ).values("id", "l", "agreement")[0]
-        return {"ideaId": result[0], "type": result[1].type, "agreement": result[2]}
+        ).values("id", "type", "agreement")[0]
+        return {"ideaId": result[0], "type": result[1], "agreement": result[2]}
 
     with driver.session() as session:
         return session.execute_write(like, user_id, idea_id, agreement)
