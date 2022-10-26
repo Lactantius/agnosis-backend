@@ -357,7 +357,7 @@ def get_all_seen_ideas_with_user_and_aggregate_reactions(driver, user_id: str) -
             }
             """,
                 user_id=user_id,
-            ).values("i")
+            ).value("i")
         )
 
 
