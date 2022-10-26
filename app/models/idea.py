@@ -345,7 +345,7 @@ def get_all_seen_ideas_with_user_and_aggregate_reactions(driver, user_id: str) -
         return session.execute_read(
             lambda tx: tx.run(
                 """
-            MATCH (u:User {userId: $user_id})-[relationship]->(i:Idea)
+            MATCH (u:User {userId: $user_id})-[relationship:LIKES|DISLIKES]->(i:Idea)
             MATCH (:User)-[r:LIKES|DISLIKES]->(i)
             RETURN DISTINCT i {
                 .*,
@@ -427,9 +427,15 @@ def get_posted_ideas(driver, user_id):
             lambda tx: tx.run(
                 """
                 MATCH (u:User {userId: $user_id})-[:POSTED]->(i:Idea)
+                MATCH (u)-[reaction:LIKES|DISLIKES]->(i)
+                MATCH (:User)-[r:LIKES|DISLIKES]->(i)
                 RETURN i {
                     .*,
-                    createdAt: toString(i.createdAt)
+                    createdAt: toString(i.createdAt),
+                    userAgreement: reaction.agreement,
+                    userRelationship: type(reaction),
+                    allReactions: collect(type(r)),
+                    allAgreement: collect(r.agreement)
                 }
                 """,
                 user_id=user_id,
