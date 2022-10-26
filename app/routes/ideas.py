@@ -18,6 +18,7 @@ from app.models.idea import (
     get_idea_with_all_reactions,
     delete_idea,
     get_posted_ideas,
+    get_all_seen_ideas_with_user_and_aggregate_reactions,
 )
 
 ideas = Blueprint("ideas", __name__, url_prefix="/api/ideas")
@@ -100,7 +101,10 @@ def agreeable_idea():
 
     idea = get_agreeable_idea(current_app.driver, user_id)
 
-    return (jsonify(idea=idea), 200)
+    if idea is None:
+        return (jsonify(error="We are all out of nice ideas."), 404)
+
+    return (jsonify(idea=idea[0]), 200)
 
 
 @ideas.post("/<string:idea_id>/react")
@@ -128,6 +132,20 @@ def viewed_ideas():
     user_id = claims.get("userId", None)
 
     ideas = get_seen_ideas(current_app.driver, user_id)
+
+    return jsonify(ideas=ideas)
+
+
+@ideas.get("/viewed-with-relationships")
+@jwt_required()
+def viewed_ideas_with_relationships():
+
+    claims = get_jwt()
+    user_id = claims.get("userId", None)
+
+    ideas = get_all_seen_ideas_with_user_and_aggregate_reactions(
+        current_app.driver, user_id
+    )
 
     return jsonify(ideas=ideas)
 

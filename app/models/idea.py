@@ -108,7 +108,7 @@ def random_idea(driver, user_id):
 
 def random_unseen_idea(driver, user_id):
     with driver.session() as session:
-        result = session.execute_read(
+        return session.execute_read(
             lambda tx: tx.run(
                 """
                 MATCH (u:User {userId: $user_id})
@@ -122,11 +122,8 @@ def random_unseen_idea(driver, user_id):
                 LIMIT 1
                 """,
                 user_id=user_id,
-            ).value("i")
+            ).single()
         )
-        current_app.logger.warning("Print this")
-        current_app.logger.warning(result)
-        return result
 
 
 def get_disagreeable_idea(driver, user_id):
@@ -182,7 +179,7 @@ def get_agreeable_idea(driver, user_id):
                 LIMIT 1
                 """,
                 user_id=user_id,
-            ).single()[0]
+            ).single()
         )
 
 
@@ -339,6 +336,29 @@ def get_seen_ideas(driver, user_id: str) -> list:
 
     with driver.session() as session:
         return session.execute_read(user_seen, user_id)
+
+
+def get_all_seen_ideas_with_user_and_aggregate_reactions(driver, user_id: str) -> list:
+    """Get all ideas that a user has a direct connection with, along with reaction data"""
+
+    with driver.session() as session:
+        return session.execute_read(
+            lambda tx: tx.run(
+                """
+            MATCH (u:User {userId: $user_id})-[relationship]->(i:Idea)
+            MATCH (:User)-[r:LIKES|DISLIKES]->(i)
+            RETURN DISTINCT i {
+                .*,
+                createdAt: toString(i.createdAt),
+                userAgreement: relationship.agreement,
+                userRelationship: type(relationship),
+                allReactions: collect(type(r)),
+                allAgreement: collect(r.agreement)
+            }
+            """,
+                user_id=user_id,
+            ).values("i")
+        )
 
 
 def get_idea_details(driver, idea_id):
