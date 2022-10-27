@@ -239,6 +239,7 @@ def test_like_idea(client: FlaskClient, auth_headers) -> None:
         assert res.json["reaction"]["agreement"] == -2
 
 
+@pytest.mark.skip
 def test_dislike_idea(client: FlaskClient, auth_headers) -> None:
     """Can one dislike an idea?"""
 
@@ -266,31 +267,6 @@ def test_get_viewed_ideas(client: FlaskClient, auth_headers) -> None:
 
 
 @pytest.mark.skip
-def test_get_idea_details_with_reaction(client: FlaskClient, auth_headers) -> None:
-    """Can one get an idea along with the reaction to that idea?"""
-
-    with client:
-        id = client.get("/api/ideas/viewed", headers=auth_headers).json["ideas"][0][
-            "ideaId"
-        ]
-        res = client.get(f"/api/ideas/{id}", headers=auth_headers)
-        assert res.status_code == 200
-        assert res.json["idea"]["url"] is not None
-
-
-@pytest.mark.skip
-def test_get_idea_details_with_all_reactions(client: FlaskClient, auth_headers) -> None:
-    """Can one get an idea with all reactions?"""
-
-    with client:
-        id = client.get("/api/ideas/viewed", headers=auth_headers).json["ideas"][0][
-            "ideaId"
-        ]
-        res = client.get(f"/api/ideas/{id}/reactions", headers=auth_headers)
-        assert res.status_code == 200
-        assert res.json["idea"]["url"] is not None
-
-
 def test_delete_idea(client: FlaskClient, logged_in_user, auth_headers) -> None:
     """Can a user delete an idea?"""
 
@@ -305,7 +281,9 @@ def test_delete_idea(client: FlaskClient, logged_in_user, auth_headers) -> None:
 
 
 @pytest.mark.skip
-def test_get_posted_ideas(client: FlaskClient, logged_in_user, auth_headers) -> None:
+def test_can_get_posted_ideas(
+    client: FlaskClient, logged_in_user, auth_headers
+) -> None:
     """Can one view all ideas posted by a user?"""
 
     with client:
@@ -314,3 +292,55 @@ def test_get_posted_ideas(client: FlaskClient, logged_in_user, auth_headers) -> 
         print(res.json)
         assert res.status_code == 200
         assert len(res.json["ideas"]) > 0
+
+
+@pytest.mark.skip
+def test_can_get_idea_details(
+    client: FlaskClient, logged_in_user, auth_headers
+) -> None:
+    """Can one view idea details?"""
+
+    with client:
+        user_id = logged_in_user["user"]["sub"]
+        idea_id = client.get(f"/api/ideas/user/{user_id}", headers=auth_headers).json[
+            "ideas"
+        ][0]["ideaId"]
+        res = client.get(f"/api/ideas/{idea_id}", headers=auth_headers)
+        print(res.json)
+        assert res.status_code == 200
+
+
+@pytest.mark.skip
+def test_get_idea_details_with_reactions(
+    client: FlaskClient, logged_in_user, auth_headers
+) -> None:
+    """Can one view idea details with reactions?"""
+
+    with client:
+        user_id = logged_in_user["user"]["sub"]
+        idea_id = client.get(f"/api/ideas/user/{user_id}", headers=auth_headers).json[
+            "ideas"
+        ][0]["ideaId"]
+        res = client.get(
+            f"/api/ideas/{idea_id}?with-reactions=true", headers=auth_headers
+        )
+        print(res.json)
+        assert res.status_code == 200
+
+
+def test_get_idea_details_with_all_reactions(
+    client: FlaskClient, logged_in_user, auth_headers
+) -> None:
+    """Can one view idea details with reactions?"""
+
+    with client:
+        user_id = logged_in_user["user"]["sub"]
+        idea_id = client.get(f"/api/ideas/user/{user_id}", headers=auth_headers).json[
+            "ideas"
+        ][0]["ideaId"]
+        res = client.get(
+            f"/api/ideas/{idea_id}?with-reactions=true&with-user-reaction=true",
+            headers=auth_headers,
+        )
+        print(res.json)
+        assert res.status_code == 200

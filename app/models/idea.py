@@ -363,7 +363,7 @@ def get_all_seen_ideas_with_user_and_aggregate_reactions(driver, user_id: str) -
 
 def get_idea_details(
     driver, idea_id, with_reactions=False, user_id=None
-) -> Idea | IdeaWithAnonReactions | IdeaWithAllReactions:
+) -> Idea | IdeaWithAnonReactions | IdeaWithAllReactions | None:
     """Get all details of an idea"""
 
     def with_no_reactions(tx, idea_id):
@@ -399,7 +399,7 @@ def get_idea_details(
         result = tx.run(
             """
             MATCH (u:User {userId: $user_id})-[relationship:LIKES|DISLIKES]->(i:Idea {ideaId: $idea_id})
-            MATCH (:User)-[r]->(i:Idea {ideaId: $idea_id})
+            OPTIONAL MATCH (:User)-[r]->(i:Idea {ideaId: $idea_id})
             RETURN DISTINCT i {
                 .*,
                 createdAt: toString(i.createdAt),
@@ -416,10 +416,10 @@ def get_idea_details(
 
     with driver.session() as session:
 
-        if with_reactions and user_id:
+        if user_id and with_reactions:
             return session.execute_read(with_all_reactions, idea_id, user_id)
 
-        if with_reactions:
+        if with_reactions and user_id is None:
             return session.execute_read(with_anon_reactions, idea_id)
 
         return session.execute_read(with_no_reactions, idea_id)

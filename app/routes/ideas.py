@@ -19,6 +19,7 @@ from app.models.idea import (
     delete_idea,
     get_posted_ideas,
     get_all_seen_ideas_with_user_and_aggregate_reactions,
+    get_idea_details,
 )
 
 ideas = Blueprint("ideas", __name__, url_prefix="/api/ideas")
@@ -70,7 +71,7 @@ def get_unseen_idea() -> tuple[Response, int]:
     idea = random_unseen_idea(current_app.driver, user_id)
 
     if idea is None:
-        return (jsonify(error="We are all out of idea you haven't seen before."), 404)
+        return (jsonify(msg="We are all out of idea you haven't seen before."), 404)
 
     return (jsonify(idea=idea[0]), 200)
 
@@ -86,7 +87,7 @@ def disagreeable_idea():
     idea = get_disagreeable_idea(current_app.driver, user_id)
 
     if idea is None:
-        return (jsonify(error="We are all out of ideas for you to disagree with."), 404)
+        return (jsonify(msg="We are all out of ideas for you to disagree with."), 404)
 
     return (jsonify(idea=idea[0]), 200)
 
@@ -102,7 +103,7 @@ def agreeable_idea():
     idea = get_agreeable_idea(current_app.driver, user_id)
 
     if idea is None:
-        return (jsonify(error="We are all out of nice ideas."), 404)
+        return (jsonify(msg="We are all out of nice ideas."), 404)
 
     return (jsonify(idea=idea[0]), 200)
 
@@ -150,6 +151,14 @@ def viewed_ideas_with_relationships():
     return jsonify(ideas=ideas)
 
 
+@ideas.get("/<string:idea_id>/reactions")
+@jwt_required()
+def idea_reactions(idea_id):
+
+    idea = get_idea_with_all_reactions(current_app.driver, idea_id)
+    return jsonify(idea=idea)
+
+
 @ideas.get("/<string:idea_id>")
 @jwt_required()
 def idea_details(idea_id):
@@ -157,15 +166,17 @@ def idea_details(idea_id):
     claims = get_jwt()
     user_id = claims.get("userId", None)
 
-    idea = get_idea_with_reaction(current_app.driver, idea_id, user_id)
-    return jsonify(idea=idea)
+    with_reactions = request.args.get("with-reactions", None)
+    with_user_reaction = request.args.get("with-user-reaction", None)
 
+    if with_user_reaction:
+        idea = get_idea_details(current_app.driver, idea_id, True, user_id)
+    else:
+        idea = get_idea_details(current_app.driver, idea_id, with_reactions)
 
-@ideas.get("/<string:idea_id>/reactions")
-@jwt_required()
-def idea_reactions(idea_id):
+    if idea is None:
+        return (jsonify(msg="Idea not found."), 404)
 
-    idea = get_idea_with_all_reactions(current_app.driver, idea_id)
     return jsonify(idea=idea)
 
 
@@ -190,7 +201,7 @@ def posted_by_user(user_id):
     claims = get_jwt()
     current_user = claims.get("userId", None)
     if current_user != user_id:
-        return (jsonify(error="You are not authorized to view this resource"), 403)
+        return (jsonify(msg="You are not authorized to view this resource"), 403)
 
     ideas = get_posted_ideas(current_app.driver, user_id)
     return jsonify(ideas=ideas)
