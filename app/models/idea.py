@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import current_app
 from neo4j.exceptions import ConstraintError
 
-from app.types import IdeaData
+from app.types import IdeaData, Idea, IdeaWithAllReactions, IdeaWithAnonReactions
 
 
 ##############################################################################
@@ -361,25 +361,71 @@ def get_all_seen_ideas_with_user_and_aggregate_reactions(driver, user_id: str) -
         )
 
 
-def get_idea_details(driver, idea_id):
+def get_idea_details(
+    driver, idea_id, with_reactions=False, user_id=None
+) -> Idea | IdeaWithAnonReactions | IdeaWithAllReactions:
     """Get all details of an idea"""
 
-    with driver.session() as session:
-        return session.execute_read(
-            lambda tx: tx.run(
-                """
+    def with_no_reactions(tx, idea_id):
+        result = tx.run(
+            """
             MATCH (i:Idea {ideaId: $idea_id})
             RETURN i {
                 .*,
                 createdAt: toString(i.createdAt)
             }
             """,
-                idea_id=idea_id,
-            ).single()[0]
-        )
+            idea_id=idea_id,
+        ).single()
+        return result[0] if result else None
+
+    def with_anon_reactions(tx, idea_id):
+        result = tx.run(
+            """
+            MATCH (i:Idea {ideaId: $idea_id})
+            OPTIONAL MATCH (:User)-[r:LIKES|DISLIKES]->(i)
+            RETURN DISTINCT i {
+                .*,
+                createdAt: toString(i.createdAt),
+                allReactions: collect(type(r)),
+                allAgreement: collect(r.agreement)
+            }
+            """,
+            idea_id=idea_id,
+        ).single()
+        return result[0] if result else None
+
+    def with_all_reactions(tx, idea_id, user_id):
+        result = tx.run(
+            """
+            MATCH (u:User {userId: $user_id})-[relationship:LIKES|DISLIKES]->(i:Idea {ideaId: $idea_id})
+            MATCH (:User)-[r]->(i:Idea {ideaId: $idea_id})
+            RETURN DISTINCT i {
+                .*,
+                createdAt: toString(i.createdAt),
+                userRelationship: type(relationship),
+                userAgreement: relationship.agreement,
+                allReactions: collect(type(r)),
+                allAgreement: collect(r.agreement)
+            }
+            """,
+            idea_id=idea_id,
+            user_id=user_id,
+        ).single()
+        return result[0] if result else None
+
+    with driver.session() as session:
+
+        if with_reactions and user_id:
+            return session.execute_read(with_all_reactions, idea_id, user_id)
+
+        if with_reactions:
+            return session.execute_read(with_anon_reactions, idea_id)
+
+        return session.execute_read(with_no_reactions, idea_id)
 
 
-def get_idea_with_reaction(driver, idea_id, user_id):
+def get_idea_with_reactions(driver, idea_id, user_id):
     """Get idea details along with user reaction"""
 
     with driver.session() as session:
@@ -410,8 +456,10 @@ def get_idea_with_all_reactions(driver, idea_id):
                 RETURN DISTINCT i {
                     .*,
                     createdAt: toString(i.createdAt),
-                    reactions: collect(type(r)),
-                    agreement: collect(r.agreement)
+                    userAgreement: reaction.agreement,
+                    userRelationship: type(reaction),
+                    allReactions: collect(type(r)),
+                    allAgreement: collect(r.agreement)
                 }
                 """,
                 idea_id=idea_id,

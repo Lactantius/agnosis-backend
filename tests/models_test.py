@@ -15,6 +15,7 @@ from app.models.idea import (
     get_liked_ideas,
     get_disliked_ideas,
     get_seen_ideas,
+    get_idea_details,
 )
 
 
@@ -212,6 +213,7 @@ def test_can_delete_idea(app: Flask):
         assert result == idea_id
 
 
+@pytest.mark.skip
 def test_can_get_liked_ideas(app: Flask):
     with app.app_context():
         with get_driver() as driver:
@@ -221,6 +223,7 @@ def test_can_get_liked_ideas(app: Flask):
         assert len(ideas) == 2
 
 
+@pytest.mark.skip
 def test_can_get_disliked_ideas(app: Flask):
     with app.app_context():
         with get_driver() as driver:
@@ -230,6 +233,7 @@ def test_can_get_disliked_ideas(app: Flask):
         assert len(ideas) == 3
 
 
+@pytest.mark.skip
 def test_can_get_seen_ideas(app: Flask):
     with app.app_context():
         with get_driver() as driver:
@@ -237,3 +241,45 @@ def test_can_get_seen_ideas(app: Flask):
             ideas = get_seen_ideas(driver, user_id)
 
         assert len(ideas) == 7
+
+
+def test_can_get_idea_details(app: Flask) -> None:
+    with app.app_context():
+        with get_driver() as driver:
+            idea_id = search_ideas(driver, "cellular")[0][0]
+            idea = get_idea_details(driver, idea_id)
+
+        print(idea)
+        assert idea is not None
+
+
+def test_can_get_idea_with_anon_reactions(app: Flask) -> None:
+    with app.app_context():
+        with get_driver() as driver:
+            idea_id = search_ideas(driver, "cellular")[0][0]
+            idea = get_idea_details(driver, idea_id, with_reactions=True)
+
+        print(idea)
+        assert idea is not None
+
+
+def test_can_get_idea_with_all_reactions(app: Flask) -> None:
+    with app.app_context():
+        with get_driver() as driver:
+            user_id = find_user(driver, "ostewart@example.org")["userId"]
+            idea_id = search_ideas(driver, "low data ability")[0][0]
+            idea = get_idea_details(
+                driver, idea_id, with_reactions=True, user_id=user_id
+            )
+
+        print(idea)
+        assert idea is not None
+
+
+def test_idea_details_returns_none_if_not_found(app: Flask) -> None:
+    with app.app_context():
+        with get_driver() as driver:
+
+            idea = get_idea_details(driver, "bob")
+
+        assert idea is None

@@ -14,7 +14,7 @@ from app.models.idea import (
     like_idea,
     dislike_idea,
     get_seen_ideas,
-    get_idea_with_reaction,
+    get_idea_with_reactions,
     get_idea_with_all_reactions,
     delete_idea,
     get_posted_ideas,
