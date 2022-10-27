@@ -370,9 +370,11 @@ def get_idea_details(
         result = tx.run(
             """
             MATCH (i:Idea {ideaId: $idea_id})
+            MATCH (poster:User)-[:POSTED]->(i)
             RETURN i {
                 .*,
-                createdAt: toString(i.createdAt)
+                createdAt: toString(i.createdAt),
+                postedBy: poster.userId
             }
             """,
             idea_id=idea_id,
@@ -383,12 +385,14 @@ def get_idea_details(
         result = tx.run(
             """
             MATCH (i:Idea {ideaId: $idea_id})
+            MATCH (poster:User)-[:POSTED]->(i)
             OPTIONAL MATCH (:User)-[r:LIKES|DISLIKES]->(i)
             RETURN DISTINCT i {
                 .*,
                 createdAt: toString(i.createdAt),
                 allReactions: collect(type(r)),
-                allAgreement: collect(r.agreement)
+                allAgreement: collect(r.agreement),
+                postedBy: poster.userId
             }
             """,
             idea_id=idea_id,
@@ -399,6 +403,7 @@ def get_idea_details(
         result = tx.run(
             """
             MATCH (u:User {userId: $user_id})-[relationship:LIKES|DISLIKES]->(i:Idea {ideaId: $idea_id})
+            MATCH (poster:User)-[:POSTED]->(i)
             OPTIONAL MATCH (:User)-[r]->(i:Idea {ideaId: $idea_id})
             RETURN DISTINCT i {
                 .*,
@@ -406,7 +411,8 @@ def get_idea_details(
                 userRelationship: type(relationship),
                 userAgreement: relationship.agreement,
                 allReactions: collect(type(r)),
-                allAgreement: collect(r.agreement)
+                allAgreement: collect(r.agreement),
+                postedBy: poster.userId
             }
             """,
             idea_id=idea_id,

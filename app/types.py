@@ -23,6 +23,7 @@ class Idea(TypedDict):
     description: str
     url: str
     ideaId: str
+    postedBy: str
 
 
 class IdeaWithAnonReactions(TypedDict):
@@ -32,6 +33,7 @@ class IdeaWithAnonReactions(TypedDict):
     ideaId: str
     allReactions: list[str]
     allAgreement: list[int]
+    postedBy: str
 
 
 class IdeaWithAllReactions(TypedDict):
@@ -43,3 +45,4 @@ class IdeaWithAllReactions(TypedDict):
     userAgreement: int
     allReactions: list[str]
     allAgreement: list[int]
+    postedBy: str
