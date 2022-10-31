@@ -2,11 +2,42 @@
 
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt
+from flask_expects_json import expects_json
 
 from app.models.user import register, authenticate, find_user, edit_user
 from app.exceptions.validation_exception import ValidationException
 
 users = Blueprint("users", __name__, url_prefix="/api/users")
+
+signup_schema = {
+    "type": "object",
+    "properties": {
+        "email": {"type": "string"},
+        "username": {"type": "string"},
+        "password": {"type": "string"},
+    },
+    "required": ["email", "username", "password"],
+}
+
+login_schema = {
+    "type": "object",
+    "properties": {
+        "email": {"type": "string"},
+        "password": {"type": "string"},
+    },
+    "required": ["email", "password"],
+}
+
+update_user_schema = {
+    "type": "object",
+    "properties": {
+        "currentPassword": {"type": "string"},
+        "newEmail": {"type": "string"},
+        "newUsername": {"type": "string"},
+        "newPassword": {"type": "string"},
+    },
+    "required": ["currentPassword"],
+}
 
 
 ##############################################################################
@@ -15,6 +46,7 @@ users = Blueprint("users", __name__, url_prefix="/api/users")
 
 
 @users.post("/signup")
+@expects_json(signup_schema)
 def signup():
     data = request.get_json()
 
@@ -34,6 +66,7 @@ def signup():
 
 
 @users.post("/login")
+@expects_json(login_schema)
 def login():
     data = request.get_json()
 
@@ -62,7 +95,7 @@ def get_user(user_id):
     if current_user != user_id:
         return (jsonify(msg="You are not authorized to view this resource"), 403)
 
-    user = find_user(current_app.driver, claims.get("email"))
+    user = find_user(current_app.driver, user_id)
     without_pass = {key: value for key, value in user.items() if key != "password"}
 
     return (jsonify(user=without_pass), 200)
@@ -74,6 +107,7 @@ def get_user(user_id):
 
 
 @users.patch("/<string:user_id>")
+@expects_json(update_user_schema)
 @jwt_required()
 def update_user(user_id):
 

@@ -3,6 +3,7 @@
 from flask import Blueprint, jsonify, request, current_app
 from flask.wrappers import Response
 from flask_jwt_extended import jwt_required, get_jwt
+from flask_expects_json import expects_json
 
 from app.models.idea import (
     add_idea,
@@ -10,7 +11,6 @@ from app.models.idea import (
     random_unseen_idea,
     get_agreeable_idea,
     get_disagreeable_idea,
-    get_ideas,
     like_idea,
     dislike_idea,
     get_seen_ideas,
@@ -22,8 +22,25 @@ from app.models.idea import (
 
 ideas = Blueprint("ideas", __name__, url_prefix="/api/ideas")
 
+post_idea_schema = {
+    "type": "object",
+    "properties": {
+        "url": {"type": "string"},
+        "description": {"type": "string"},
+        "sourceId": {"type": "string"},
+    },
+    "required": ["url", "description"],
+}
+
+post_reaction_schema = {
+    "type": "object",
+    "properties": {"type": {"type": "string"}, "agreement": {"type": "number"}},
+    "required": ["type"],
+}
+
 
 @ideas.post("/")
+@expects_json(post_idea_schema)
 @jwt_required()
 def post_idea() -> tuple[Response, int]:
     """Post a new idea"""
@@ -107,6 +124,7 @@ def agreeable_idea():
 
 
 @ideas.post("/<string:idea_id>/react")
+@expects_json(post_reaction_schema)
 @jwt_required()
 def react_to_idea(idea_id):
 

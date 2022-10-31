@@ -32,7 +32,7 @@ def create_user(tx, email: str, encrypted: str, username: str) -> User:
     ).single()
 
 
-def get_user_with_email(tx, email: str) -> User | None:
+def user_by_email(tx, email: str) -> User | None:
     """
     Transaction function for getting a user from the database
     TODO: Let user be found by username as well
@@ -53,7 +53,7 @@ def get_user_with_email(tx, email: str) -> User | None:
     return user.get("u")
 
 
-def get_user(tx, user_id: str) -> User | None:
+def user_by_id(tx, user_id: str) -> User | None:
     """Transaction function for getting a user from the database"""
     user = tx.run(
         """
@@ -114,7 +114,7 @@ def authenticate(driver, email, password) -> UserToken | bool:
     """
 
     with driver.session() as session:
-        user = session.execute_read(get_user_with_email, email)
+        user = session.execute_read(user_by_email, email)
 
     if user is None:
         return False
@@ -136,9 +136,9 @@ def authenticate(driver, email, password) -> UserToken | bool:
     return payload
 
 
-def find_user(driver, email: str) -> User:
+def find_user(driver, user_id: str) -> User | None:
     with driver.session() as session:
-        return session.execute_read(get_user, email)
+        return session.execute_read(user_by_id, user_id)
 
 
 def edit_user(
@@ -211,11 +211,11 @@ def edit_user(
 
     with driver.session() as session:
 
-        user = session.execute_read(get_user, user_id)
+        user = session.execute_read(user_by_id, user_id)
 
         if user is None:
             raise ValidationException(
-                {"message": "You are not authorized to update this resource."},
+                "Invalid password",
                 {"details": None},
             )
 
@@ -226,7 +226,7 @@ def edit_user(
             is False
         ):
             raise ValidationException(
-                {"message": "You are not authorized to update this resource."},
+                "Invalid password",
                 {"details": None},
             )
 
@@ -245,7 +245,16 @@ def edit_user(
             ).decode("utf8")
             user = session.execute_write(update_password, user_id, encrypted)
 
-        return user
+        payload = {
+            "userId": user["userId"],
+            "email": user["email"],
+            "username": user["username"],
+        }
+
+        # Generate Token
+        payload["token"] = generate_token(payload)
+
+        return payload
 
 
 ##############################################################################

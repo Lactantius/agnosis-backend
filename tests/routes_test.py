@@ -37,7 +37,6 @@ def auth_headers(logged_in_user):
 #
 
 
-@pytest.mark.skip
 def test_can_signup(client: FlaskClient) -> None:
     """Can one sign up for a new account?"""
 
@@ -54,7 +53,6 @@ def test_can_signup(client: FlaskClient) -> None:
         assert res.json["user"]["email"] == "apitest@apitest.com"
 
 
-@pytest.mark.skip
 def test_error_message_if_username_or_email_not_unique(client: FlaskClient) -> None:
     """Will correct error message show?"""
 
@@ -68,7 +66,7 @@ def test_error_message_if_username_or_email_not_unique(client: FlaskClient) -> N
             },
         )
         assert bad_username.status_code == 409
-        assert "already exists" in bad_username.json["error"]
+        assert "already exists" in bad_username.json["msg"]
 
         bad_email = client.post(
             "/api/users/signup",
@@ -79,10 +77,9 @@ def test_error_message_if_username_or_email_not_unique(client: FlaskClient) -> N
             },
         )
         assert bad_email.status_code == 409
-        assert "already exists" in bad_email.json["error"]
+        assert "already exists" in bad_email.json["msg"]
 
 
-@pytest.mark.skip
 def test_can_login(client: FlaskClient) -> None:
     """Can one login?"""
 
@@ -98,7 +95,6 @@ def test_can_login(client: FlaskClient) -> None:
         assert res.json["user"]["email"] == "user1@user1.com"
 
 
-@pytest.mark.skip
 def test_cannot_login_with_invalid_credentials(client: FlaskClient) -> None:
     """Is login refused with bad credentials?"""
 
@@ -108,7 +104,7 @@ def test_cannot_login_with_invalid_credentials(client: FlaskClient) -> None:
             json={"email": "user1@user1.com", "password": "bad_password"},
         )
         assert bad_password.status_code == 401
-        assert bad_password.json["error"] == "Invalid username or password"
+        assert bad_password.json["msg"] == "Invalid username or password"
 
     with client:
         bad_email = client.post(
@@ -116,7 +112,7 @@ def test_cannot_login_with_invalid_credentials(client: FlaskClient) -> None:
             json={"email": "invalid@invalid.com", "password": "password1"},
         )
         assert bad_email.status_code == 401
-        assert bad_email.json["error"] == "Invalid username or password"
+        assert bad_email.json["msg"] == "Invalid username or password"
 
 
 ##############################################################################
@@ -124,7 +120,6 @@ def test_cannot_login_with_invalid_credentials(client: FlaskClient) -> None:
 #
 
 
-@pytest.mark.skip
 def test_can_view_user_info(client: FlaskClient) -> None:
     """Can a user view user details?"""
     with client:
@@ -145,7 +140,6 @@ def test_can_view_user_info(client: FlaskClient) -> None:
         assert res.json["user"].get("password", None) is None
 
 
-@pytest.mark.skip
 def test_cannot_view_user_info_without_proper_token(client: FlaskClient) -> None:
     """Can only the user view user details?"""
 
@@ -178,7 +172,7 @@ def test_cannot_view_user_info_without_proper_token(client: FlaskClient) -> None
         res = client.get(f"/api/users/{user1_id}", headers=headers)
 
         assert res.status_code == 403
-        assert res.json["error"] == "You are not authorized to view this resource"
+        assert res.json["msg"] == "You are not authorized to view this resource"
 
 
 def test_can_edit_user_info(client: FlaskClient) -> None:
@@ -216,7 +210,6 @@ def test_can_edit_user_info(client: FlaskClient) -> None:
 #
 
 
-@pytest.mark.skip
 def test_get_random_idea(client: FlaskClient) -> None:
     """Can one get a random idea?"""
 
@@ -228,7 +221,6 @@ def test_get_random_idea(client: FlaskClient) -> None:
         assert res.json["idea"]["url"] is not None
 
 
-@pytest.mark.skip
 def test_get_disagreeable_idea(client: FlaskClient, auth_headers) -> None:
     """Can one get a disagreeable idea?"""
 
@@ -240,7 +232,6 @@ def test_get_disagreeable_idea(client: FlaskClient, auth_headers) -> None:
         assert res.json["idea"]["url"] is not None
 
 
-@pytest.mark.skip
 def test_get_agreeable_idea(client: FlaskClient, auth_headers) -> None:
     """Can one get an agreeable idea?"""
 
@@ -252,7 +243,6 @@ def test_get_agreeable_idea(client: FlaskClient, auth_headers) -> None:
         assert res.json["idea"]["url"] is not None
 
 
-@pytest.mark.skip
 def test_like_idea(client: FlaskClient, auth_headers) -> None:
     """Can one like an idea?"""
 
@@ -269,7 +259,6 @@ def test_like_idea(client: FlaskClient, auth_headers) -> None:
         assert res.json["reaction"]["agreement"] == -2
 
 
-@pytest.mark.skip
 def test_dislike_idea(client: FlaskClient, auth_headers) -> None:
     """Can one dislike an idea?"""
 
@@ -286,7 +275,6 @@ def test_dislike_idea(client: FlaskClient, auth_headers) -> None:
         assert res.json["reaction"]["type"] == "DISLIKES"
 
 
-@pytest.mark.skip
 def test_get_viewed_ideas(client: FlaskClient, auth_headers) -> None:
     """Can one get all previously seen ideas?"""
 
@@ -296,7 +284,6 @@ def test_get_viewed_ideas(client: FlaskClient, auth_headers) -> None:
         assert res.json["ideas"] is not None
 
 
-@pytest.mark.skip
 def test_delete_idea(client: FlaskClient, logged_in_user, auth_headers) -> None:
     """Can a user delete an idea?"""
 
@@ -310,7 +297,6 @@ def test_delete_idea(client: FlaskClient, logged_in_user, auth_headers) -> None:
         assert res.json["deleted"] == idea_id
 
 
-@pytest.mark.skip
 def test_can_get_posted_ideas(
     client: FlaskClient, logged_in_user, auth_headers
 ) -> None:
@@ -324,7 +310,6 @@ def test_can_get_posted_ideas(
         assert len(res.json["ideas"]) > 0
 
 
-@pytest.mark.skip
 def test_can_get_idea_details(
     client: FlaskClient, logged_in_user, auth_headers
 ) -> None:
@@ -340,7 +325,6 @@ def test_can_get_idea_details(
         assert res.status_code == 200
 
 
-@pytest.mark.skip
 def test_get_idea_details_with_reactions(
     client: FlaskClient, logged_in_user, auth_headers
 ) -> None:
@@ -358,7 +342,6 @@ def test_get_idea_details_with_reactions(
         assert res.status_code == 200
 
 
-@pytest.mark.skip
 def test_get_idea_details_with_all_reactions(
     client: FlaskClient, logged_in_user, auth_headers
 ) -> None:
