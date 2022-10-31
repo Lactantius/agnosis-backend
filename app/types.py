@@ -55,6 +55,12 @@ class User(TypedDict):
     password: str
 
 
+class UserData(TypedDict):
+    userId: str
+    email: str
+    username: str
+
+
 class UserToken(TypedDict):
     userId: str
     email: str

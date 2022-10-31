@@ -7,7 +7,7 @@ from flask import current_app
 from neo4j.exceptions import ConstraintError
 
 from app.exceptions.validation_exception import ValidationException
-from app.types import RegistrationData, User, UserToken
+from app.types import RegistrationData, User, UserToken, UserData
 
 ##############################################################################
 # Transaction functions
@@ -106,7 +106,7 @@ def register(driver, data: RegistrationData) -> UserToken:
     return payload
 
 
-def authenticate(driver, email, password) -> UserToken | bool:
+def authenticate(driver, email: str, password: str) -> UserToken | bool:
     """
     Find user by email address, hash password, and check against stored hash.
     If sucessful, return a dictionary containing the keys userId, email, username, and token.
@@ -148,21 +148,8 @@ def edit_user(
     new_username: str | None = None,
     new_email: str | None = None,
     new_password: str | None = None,
-) -> User:
+) -> UserToken:
     """Edit an existing user"""
-
-    def check_password(tx, user_id: str, password: str) -> bool:
-        result = tx.run(
-            """
-            MATCH (u:User {userId: $user_id, password: $password})
-            RETURN u
-            """,
-            user_id=user_id,
-            password=password,
-        ).single()
-        if result:
-            return True
-        return False
 
     def update_username(tx, user_id: str, username: str):
         return tx.run(
@@ -252,6 +239,8 @@ def edit_user(
         }
 
         # Generate Token
+        # token = generate_token(user_data)
+        # return token
         payload["token"] = generate_token(payload)
 
         return payload
@@ -262,10 +251,27 @@ def edit_user(
 #
 
 
-def generate_token(payload):
-    """Generate a JWT"""
+def generate_token(payload: UserData) -> UserToken:
+    """
+    Generate a JWT
+    TODO Change this from the Neo4j example project to be functional
+    """
     iat = datetime.utcnow()
+    jwt_secret = current_app.config.get("JWT_SECRET_KEY")
 
+    # token_data = {
+    #     **data,
+    #     "sub": data["userId"],
+    #     "iat": iat,
+    #     "nbbf": iat,
+    #     "ext": iat + current_app.config.get("JWT_EXPIRATION_DELTA"),
+    # }
+    # token = {
+    #     **token_data,
+    #     "token": jwt.encode(token_data, jwt_secret, algorithm="HS256"),
+    # }
+
+    # return token
     payload["sub"] = payload["userId"]
     payload["iat"] = iat
     payload["nbf"] = iat
