@@ -230,10 +230,15 @@ def edit_user(
                 {"details": None},
             )
 
-        if new_username:
-            user = session.execute_write(update_username, user_id, new_username)
-        if new_email:
-            user = session.execute_write(update_email, user_id, new_email)
+        try:
+            if new_username:
+                user = session.execute_write(update_username, user_id, new_username)
+            if new_email:
+                user = session.execute_write(update_email, user_id, new_email)
+
+        except ConstraintError as err:
+            raise ValidationException(err.message, {"email": err.message})
+
         if new_password:
             encrypted = bcrypt.hashpw(
                 new_password.encode("utf8"), bcrypt.gensalt()
