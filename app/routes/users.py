@@ -101,4 +101,4 @@ def update_user(user_id):
     except ValidationException as err:
         return (jsonify(msg=err.message), 403)
 
-    return (jsonify(user=user), 201)
+    return (jsonify(user=user), 200)

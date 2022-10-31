@@ -169,7 +169,11 @@ def edit_user(
             """
             MATCH (u:User {userId: $user_id})
             SET u.username = $username
-            RETURN u
+            RETURN u {
+                userId: u.userId,
+                username: u.username,
+                email: u.email
+            }
             """,
             user_id=user_id,
             username=username,
@@ -180,7 +184,11 @@ def edit_user(
             """
             MATCH (u:User {userId: $user_id})
             SET u.email = $email
-            RETURN u
+            RETURN u {
+                userId: u.userId,
+                username: u.username,
+                email: u.email
+            }
             """,
             user_id=user_id,
             email=email,
@@ -191,7 +199,11 @@ def edit_user(
             """
             MATCH (u:User {userId: $user_id})
             SET u.password = $password
-            RETURN u
+            RETURN u {
+                userId: u.userId,
+                username: u.username,
+                email: u.email
+            }
             """,
             user_id=user_id,
             password=password,
