@@ -351,7 +351,7 @@ def get_all_seen_ideas_with_user_and_aggregate_reactions(driver, user_id: str) -
                 .*,
                 createdAt: toString(i.createdAt),
                 userAgreement: relationship.agreement,
-                userRelationship: type(relationship),
+                userReaction: type(relationship),
                 allReactions: collect(type(r)),
                 allAgreement: collect(r.agreement)
             }
@@ -408,7 +408,7 @@ def get_idea_details(
             RETURN DISTINCT i {
                 .*,
                 createdAt: toString(i.createdAt),
-                userRelationship: type(relationship),
+                userReaction: type(relationship),
                 userAgreement: relationship.agreement,
                 allReactions: collect(type(r)),
                 allAgreement: collect(r.agreement),
@@ -425,52 +425,10 @@ def get_idea_details(
         if user_id and with_reactions:
             return session.execute_read(with_all_reactions, idea_id, user_id)
 
-        if with_reactions and user_id is None:
+        if with_reactions:
             return session.execute_read(with_anon_reactions, idea_id)
 
         return session.execute_read(with_no_reactions, idea_id)
-
-
-def get_idea_with_reactions(driver, idea_id, user_id):
-    """Get idea details along with user reaction"""
-
-    with driver.session() as session:
-        result = session.execute_read(
-            lambda tx: tx.run(
-                """
-                MATCH (u:User {userId: $user_id})-[r]->(i:Idea {ideaId: $idea_id})
-                RETURN i {
-                    .*,
-                    createdAt: toString(i.createdAt)
-                }, r
-                """,
-                idea_id=idea_id,
-                user_id=user_id,
-            ).values("i", "r")[0]
-        )
-        return {**result[0], "reaction": (result[1].type, result[1]["agreement"])}
-
-
-def get_idea_with_all_reactions(driver, idea_id):
-    """Get idea details with anonymous reactions statistics"""
-
-    with driver.session() as session:
-        return session.execute_read(
-            lambda tx: tx.run(
-                """
-                MATCH (:User)-[r]->(i:Idea {ideaId: $idea_id})
-                RETURN DISTINCT i {
-                    .*,
-                    createdAt: toString(i.createdAt),
-                    userAgreement: reaction.agreement,
-                    userRelationship: type(reaction),
-                    allReactions: collect(type(r)),
-                    allAgreement: collect(r.agreement)
-                }
-                """,
-                idea_id=idea_id,
-            ).single()["i"]
-        )
 
 
 def get_posted_ideas(driver, user_id):
@@ -487,7 +445,7 @@ def get_posted_ideas(driver, user_id):
                     .*,
                     createdAt: toString(i.createdAt),
                     userAgreement: reaction.agreement,
-                    userRelationship: type(reaction),
+                    userReaction: type(reaction),
                     allReactions: collect(type(r)),
                     allAgreement: collect(r.agreement)
                 }

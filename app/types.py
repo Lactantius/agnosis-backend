@@ -46,3 +46,21 @@ class IdeaWithAllReactions(TypedDict):
     allReactions: list[str]
     allAgreement: list[int]
     postedBy: str
+
+
+class User(TypedDict):
+    userId: str
+    email: str
+    username: str
+    password: str
+
+
+class UserToken(TypedDict):
+    userId: str
+    email: str
+    username: str
+    sub: str
+    iat: str
+    nbf: str
+    exp: str
+    token: str

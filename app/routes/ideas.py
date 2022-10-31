@@ -14,8 +14,6 @@ from app.models.idea import (
     like_idea,
     dislike_idea,
     get_seen_ideas,
-    get_idea_with_reactions,
-    get_idea_with_all_reactions,
     delete_idea,
     get_posted_ideas,
     get_all_seen_ideas_with_user_and_aggregate_reactions,
@@ -123,6 +121,9 @@ def react_to_idea(idea_id):
     else:
         reaction = dislike_idea(current_app.driver, user_id, idea_id)
 
+    if reaction is None:
+        return (jsonify(msg="Reaction could not be saved."), 400)
+
     return (jsonify(reaction=reaction), 200)
 
 
@@ -155,8 +156,21 @@ def viewed_ideas_with_relationships():
 @jwt_required()
 def idea_reactions(idea_id):
 
-    idea = get_idea_with_all_reactions(current_app.driver, idea_id)
-    return jsonify(idea=idea)
+    claims = get_jwt()
+    user_id = claims.get("userId", None)
+
+    idea = get_idea_details(current_app.driver, idea_id, True, user_id)
+    if idea is None:
+        return (jsonify(msg="Reactions not found."), 404)
+
+    return jsonify(
+        reactions={
+            "userReaction": idea["userReaction"],
+            "userAgreement": idea["userAgreement"],
+            "allReactions": idea["allReactions"],
+            "allAgreement": idea["allAgreement"],
+        }
+    )
 
 
 @ideas.get("/<string:idea_id>")
@@ -166,8 +180,8 @@ def idea_details(idea_id):
     claims = get_jwt()
     user_id = claims.get("userId", None)
 
-    with_reactions = request.args.get("with-reactions", None)
-    with_user_reaction = request.args.get("with-user-reaction", None)
+    with_reactions = request.args.get("with-reactions", None) == "true"
+    with_user_reaction = request.args.get("with-user-reaction", None) == "true"
 
     if with_user_reaction:
         idea = get_idea_details(current_app.driver, idea_id, True, user_id)
