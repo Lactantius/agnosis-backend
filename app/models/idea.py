@@ -12,7 +12,7 @@ from app.types import IdeaData, Idea, IdeaWithAllReactions, IdeaWithAnonReaction
 #
 
 
-def get_ideas(tx, sort, order, limit, skip):
+def get_ideas(tx, sort, order, limit, skip) -> list[Idea]:
     """Transaction function for getting ideas"""
 
     cypher = """
@@ -33,7 +33,7 @@ def get_ideas(tx, sort, order, limit, skip):
     return [row.value("idea") for row in result]
 
 
-def create_idea(tx, data: IdeaData):
+def create_idea(tx, data: IdeaData) -> Idea:
     """Transaction function for adding a new idea to the db"""
     if data.get("source_id", None):
         return tx.run(
@@ -75,21 +75,21 @@ def create_idea(tx, data: IdeaData):
 #
 
 
-def all_ideas(driver, sort, order, limit=6, skip=0):
+def all_ideas(driver, sort, order, limit=6, skip=0) -> list[Idea]:
     """Get all ideas with optional paging"""
 
     with driver.session() as session:
         return session.execute_read(get_ideas, sort, order, limit, skip)
 
 
-def add_idea(driver, data: IdeaData):
+def add_idea(driver, data: IdeaData) -> Idea:
     """Add a new idea to the database"""
 
     with driver.session() as session:
         return session.execute_write(create_idea, data)["idea"]
 
 
-def random_idea(driver, user_id):
+def random_idea(driver) -> Idea:
     with driver.session() as session:
         return session.execute_read(
             lambda tx: tx.run(
@@ -106,7 +106,7 @@ def random_idea(driver, user_id):
         )["i"]
 
 
-def random_unseen_idea(driver, user_id):
+def random_unseen_idea(driver, user_id: str) -> Idea:
     with driver.session() as session:
         return session.execute_read(
             lambda tx: tx.run(
@@ -126,7 +126,7 @@ def random_unseen_idea(driver, user_id):
         )
 
 
-def get_disagreeable_idea(driver, user_id):
+def get_disagreeable_idea(driver, user_id) -> Idea:
     """
     Get an idea that the user is most likely to find interesting but wrong.
     1. Gets all idea nodes that are connected by three likes, but that are not directly connected to the user.
@@ -157,7 +157,7 @@ def get_disagreeable_idea(driver, user_id):
         return result
 
 
-def get_agreeable_idea(driver, user_id):
+def get_agreeable_idea(driver, user_id) -> Idea:
     """
     Get an idea that the user is most likely to find interesting and correct.
     Almost identical to get_disagreeable_idea.
@@ -183,7 +183,7 @@ def get_agreeable_idea(driver, user_id):
         )
 
 
-def search_ideas(driver, search_str: str):
+def search_ideas(driver, search_str: str) -> list[Idea]:
     """Search an idea by url and description"""
 
     def search(tx, search_str: str):
@@ -206,7 +206,7 @@ def like_idea(driver, user_id: str, idea_id: str, agreement: int) -> int:
     If idea is disliked, deleted dislike relationship
     """
 
-    def like(tx, user_id: str, idea_id: str, agreement: int) -> int:
+    def like(tx, user_id: str, idea_id: str, agreement: int):
         result = tx.run(
             """
             MATCH (u:User {userId: $user_id})
@@ -453,8 +453,3 @@ def get_posted_ideas(driver, user_id):
                 user_id=user_id,
             ).value("i")
         )
-
-
-##############################################################################
-# Helper functions
-#
