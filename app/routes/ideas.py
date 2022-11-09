@@ -9,6 +9,7 @@ from app.models.idea import (
     add_idea,
     random_idea,
     random_unseen_idea,
+    popular_unseen_idea,
     get_agreeable_idea,
     get_disagreeable_idea,
     like_idea,
@@ -84,6 +85,21 @@ def get_unseen_idea() -> tuple[Response, int]:
     user_id = claims.get("userId", None)
 
     idea = random_unseen_idea(current_app.driver, user_id)
+
+    if idea is None:
+        return (jsonify(msg="We are all out of idea you haven't seen before."), 404)
+
+    return (jsonify(idea=idea[0]), 200)
+
+
+@ideas.get("/popular")
+@jwt_required()
+def get_popular_idea() -> tuple[Response, int]:
+    """Get the most liked idea that the user has not yet seen"""
+    claims = get_jwt()
+    user_id = claims.get("userId", None)
+
+    idea = popular_unseen_idea(current_app.driver, user_id)
 
     if idea is None:
         return (jsonify(msg="We are all out of idea you haven't seen before."), 404)
