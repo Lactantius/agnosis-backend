@@ -29,6 +29,7 @@ class Idea(TypedDict):
 class IdeaWithScore(TypedDict):
     createdAt: str
     score: float
+    popularity: int
     description: str
     url: str
     ideaId: str

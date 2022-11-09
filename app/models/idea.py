@@ -124,7 +124,9 @@ def random_unseen_idea(driver, user_id: str) -> Idea:
                 WHERE NOT (u)-[]->(i)
                 RETURN i {
                     .*,
-                    createdAt: toString(i.createdAt)
+                    createdAt: toString(i.createdAt),
+                    popularity: null,
+                    score: null
                 }
                 ORDER BY rand()
                 LIMIT 1
@@ -143,13 +145,14 @@ def popular_unseen_idea(driver, user_id: str) -> Idea:
                 MATCH (u1:User {userId: $user_id})
                 MATCH (u2)-[r:LIKES]->(i:Idea)
                 WHERE NOT (u1)-[]->(i)
-                WITH count(u2) AS score
+                WITH count(u2) AS popularity
                 RETURN i {
                     .*,
                     createdAt: toString(i.createdAt),
-                    score: score
+                    popularity: popularity,
+                    score: null
                 }
-                ORDER BY i.score DESC LIMIT 1
+                ORDER BY i.popularity DESC LIMIT 1
                 """,
                 user_id=user_id,
             ).single()
@@ -190,7 +193,8 @@ def get_disagreeable_idea(driver, user_id) -> IdeaWithScore:
                 RETURN i {
                     .*,
                     createdAt: toString(i.createdAt),
-                    score: SUM( pearson * l.agreement)
+                    score: SUM( pearson * l.agreement),
+                    popularity: COUNT(u2)
                     }
                 ORDER BY i.score LIMIT 1
                 """,
@@ -252,7 +256,8 @@ def get_agreeable_idea(driver, user_id) -> IdeaWithScore:
                 RETURN i {
                     .*,
                     createdAt: toString(i.createdAt),
-                    score: SUM( pearson * l.agreement)
+                    score: SUM( pearson * l.agreement),
+                    popularity: COUNT(u2)
                     }
                 ORDER BY i.score DESC LIMIT 1
                 """,
