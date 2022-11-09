@@ -26,6 +26,14 @@ class Idea(TypedDict):
     postedBy: str
 
 
+class IdeaWithScore(TypedDict):
+    createdAt: str
+    score: float
+    description: str
+    url: str
+    ideaId: str
+
+
 class IdeaWithAnonReactions(TypedDict):
     createdAt: str
     description: str

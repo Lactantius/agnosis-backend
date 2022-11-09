@@ -4,7 +4,13 @@ from datetime import datetime
 from flask import current_app
 from neo4j.exceptions import ConstraintError
 
-from app.types import IdeaData, Idea, IdeaWithAllReactions, IdeaWithAnonReactions
+from app.types import (
+    IdeaData,
+    Idea,
+    IdeaWithAllReactions,
+    IdeaWithAnonReactions,
+    IdeaWithScore,
+)
 
 
 ##############################################################################
@@ -90,6 +96,7 @@ def add_idea(driver, data: IdeaData) -> Idea:
 
 
 def random_idea(driver) -> Idea:
+    """Get a completely random idea"""
     with driver.session() as session:
         return session.execute_read(
             lambda tx: tx.run(
@@ -107,6 +114,7 @@ def random_idea(driver) -> Idea:
 
 
 def random_unseen_idea(driver, user_id: str) -> Idea:
+    """Get a random idea not seen by the user"""
     with driver.session() as session:
         return session.execute_read(
             lambda tx: tx.run(
@@ -126,38 +134,93 @@ def random_unseen_idea(driver, user_id: str) -> Idea:
         )
 
 
-def get_disagreeable_idea(driver, user_id) -> Idea:
+def popular_unseen_idea(driver, user_id: str) -> Idea:
+    """Get the most liked idea that the user has not yet rated"""
+    with driver.session() as session:
+        return session.execute_read(
+            lambda tx: tx.run(
+                """
+                MATCH (u1:User {userId: $user_id})
+                MATCH (u2)-[r:LIKES]->(i:Idea)
+                WHERE NOT (u1)-[]->(i)
+                WITH count(u2) AS score
+                RETURN i {
+                    .*,
+                    createdAt: toString(i.createdAt),
+                    score: score
+                }
+                ORDER BY i.score DESC LIMIT 1
+                """,
+                user_id=user_id,
+            ).single()
+        )
+
+
+def get_disagreeable_idea(driver, user_id) -> IdeaWithScore:
     """
     Get an idea that the user is most likely to find interesting but wrong.
-    1. Gets all idea nodes that are connected by three likes, but that are not directly connected to the user.
-    2. For each path to each node, multiply together the degree of the likes for a
-        crude score of agreement probability.
-    3. For each node, add together the path scores.
-    4. Return the node with the lowest value.
+    It identifies user similarity using a Pearson similarity function.
+    The query is modified from one found in the official Neo4j documentation.
+    Currently it picks every adjacent user; this could be simplified.
     """
     with driver.session() as session:
         result = session.execute_read(
             lambda tx: tx.run(
                 """
-                MATCH p = (u:User { userId: $user_id })-[:LIKES]->(:Idea)<-[:LIKES]-(:User)-[:LIKES]->(i:Idea)
-                WHERE NOT (u)-[]->(i)
-                WITH *, relationships(p) as likes
-                WITH *, reduce(acc = 1, like IN likes | acc * like.agreement) AS agree
+                MATCH (u1:User {userId: $user_id})-[l:LIKES]->(i:Idea)
+                WITH u1, avg(l.agreement) AS u1_mean
+
+                MATCH (u1)-[r1:LIKES]->(i:Idea)<-[r2:LIKES]-(u2)
+                WITH u1, u1_mean, u2, COLLECT({r1: r1, r2: r2}) AS ratings
+
+                MATCH (u2)-[r:LIKES]->(i:Idea)
+                WITH u1, u1_mean, u2, avg(r.agreement) AS u2_mean, ratings
+
+                UNWIND ratings AS r
+
+                WITH sum( (r.r1.agreement-u1_mean) * (r.r2.agreement-u2_mean) ) AS nom,
+                    sqrt( sum( (r.r1.agreement - u1_mean)^2) * sum( (r.r2.agreement - u2_mean) ^2)) AS denom,
+                    u1, u2 WHERE denom <> 0
+
+                WITH u1, u2, nom/denom AS pearson
+                ORDER BY pearson
+
+                MATCH (u2)-[l:LIKES]->(i:Idea) WHERE NOT EXISTS( (u1)-[]->(i) )
+
                 RETURN i {
                     .*,
                     createdAt: toString(i.createdAt),
-                    agreement: sum(agree)
-                }
-                ORDER BY i.agreement
-                LIMIT 1
+                    score: SUM( pearson * l.agreement)
+                    }
+                ORDER BY i.score LIMIT 1
                 """,
                 user_id=user_id,
             ).single()
         )
         return result
 
+        # Original query
+        # 1. Gets all idea nodes that are connected by three likes, but that are not directly connected to the user.
+        # 2. For each path to each node, multiply together the degree of the likes for a
+        #     crude score of agreement probability.
+        # 3. For each node, add together the path scores.
+        # 4. Return the node with the lowest value.
+        # """
+        # MATCH p = (u:User { userId: $user_id })-[:LIKES]->(:Idea)<-[:LIKES]-(:User)-[:LIKES]->(i:Idea)
+        # WHERE NOT (u)-[]->(i)
+        # WITH *, relationships(p) as likes
+        # WITH *, reduce(acc = 1, like IN likes | acc * like.agreement) AS agree
+        # RETURN i {
+        #     .*,
+        #     createdAt: toString(i.createdAt),
+        #     agreement: sum(agree)
+        # }
+        # ORDER BY i.agreement
+        # LIMIT 1
+        # """,
 
-def get_agreeable_idea(driver, user_id) -> Idea:
+
+def get_agreeable_idea(driver, user_id) -> IdeaWithScore:
     """
     Get an idea that the user is most likely to find interesting and correct.
     Almost identical to get_disagreeable_idea.
@@ -166,17 +229,32 @@ def get_agreeable_idea(driver, user_id) -> Idea:
         return session.execute_read(
             lambda tx: tx.run(
                 """
-                MATCH p = (u:User { userId: $user_id })-[:LIKES]->(:Idea)<-[:LIKES]-(:User)-[:LIKES]->(i:Idea)
-                WHERE NOT (u)-[]->(i)
-                WITH *, relationships(p) as likes
-                WITH *, reduce(acc = 1, like IN likes | acc * like.agreement) AS agree
+                MATCH (u1:User {userId: $user_id})-[l:LIKES]->(i:Idea)
+                WITH u1, avg(l.agreement) AS u1_mean
+
+                MATCH (u1)-[r1:LIKES]->(i:Idea)<-[r2:LIKES]-(u2)
+                WITH u1, u1_mean, u2, COLLECT({r1: r1, r2: r2}) AS ratings
+
+                MATCH (u2)-[r:LIKES]->(i:Idea)
+                WITH u1, u1_mean, u2, avg(r.agreement) AS u2_mean, ratings
+
+                UNWIND ratings AS r
+
+                WITH sum( (r.r1.agreement-u1_mean) * (r.r2.agreement-u2_mean) ) AS nom,
+                    sqrt( sum( (r.r1.agreement - u1_mean)^2) * sum( (r.r2.agreement - u2_mean) ^2)) AS denom,
+                    u1, u2 WHERE denom <> 0
+
+                WITH u1, u2, nom/denom AS pearson
+                ORDER BY pearson
+
+                MATCH (u2)-[l:LIKES]->(i:Idea) WHERE NOT EXISTS( (u1)-[]->(i) )
+
                 RETURN i {
                     .*,
                     createdAt: toString(i.createdAt),
-                    agreement: sum(agree)
-                }
-                ORDER BY i.agreement
-                LIMIT 1
+                    score: SUM( pearson * l.agreement)
+                    }
+                ORDER BY i.score DESC LIMIT 1
                 """,
                 user_id=user_id,
             ).single()
@@ -431,7 +509,7 @@ def get_idea_details(
         return session.execute_read(with_no_reactions, idea_id)
 
 
-def get_posted_ideas(driver, user_id):
+def get_posted_ideas(driver, user_id) -> list[IdeaWithAllReactions]:
     """Get all ideas posted by a user"""
 
     with driver.session() as session:
