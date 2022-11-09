@@ -145,7 +145,7 @@ def popular_unseen_idea(driver, user_id: str) -> Idea:
                 MATCH (u1:User {userId: $user_id})
                 MATCH (u2)-[r:LIKES]->(i:Idea)
                 WHERE NOT (u1)-[]->(i)
-                WITH count(u2) AS popularity
+                WITH i, toString(i.createdAt) AS createdAt, count(u2) AS popularity
                 RETURN i {
                     .*,
                     createdAt: toString(i.createdAt),
