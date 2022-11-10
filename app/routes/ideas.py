@@ -87,7 +87,7 @@ def get_unseen_idea() -> tuple[Response, int]:
     idea = random_unseen_idea(current_app.driver, user_id)
 
     if idea is None:
-        return (jsonify(msg="We are all out of idea you haven't seen before."), 404)
+        return (jsonify(msg="We are all out of ideas you haven't seen before."), 404)
 
     return (jsonify(idea=idea[0]), 200)
 
